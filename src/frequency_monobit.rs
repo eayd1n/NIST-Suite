@@ -35,7 +35,9 @@ pub fn perform_test(bit_string: &str) -> Result<bool> {
 
     // Recommended size is at least 100 bits. It is not an error but log a warning
     if length < 100 {
-        log::warn!("Recommended size is at least 100 bits. Consider imprecision when calculating p-value");
+        log::warn!(
+            "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
+        );
     }
 
     // first of all, we need to compute the partial sum S_n. This means '1' is a +1 whereas a '0' is a -1
@@ -46,10 +48,14 @@ pub fn perform_test(bit_string: &str) -> Result<bool> {
         match bit {
             '0' => count_zero += 1,
             '1' => count_one += 1,
-            _ => {},
+            _ => {}
         };
     }
-    log::info!("Bit string contains {} zeros and {} ones", count_zero, count_one);
+    log::info!(
+        "Bit string contains {} zeros and {} ones",
+        count_zero,
+        count_one
+    );
 
     let partial_sum = (count_zero - count_one) as f64;
 

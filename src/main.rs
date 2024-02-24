@@ -1,5 +1,5 @@
-mod frequency_monobit;
 mod frequency_block;
+mod frequency_monobit;
 mod logger;
 mod tests;
 mod utils;
