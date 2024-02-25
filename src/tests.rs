@@ -9,3 +9,6 @@ mod frequency_block_tests;
 
 #[cfg(test)]
 mod runs_tests;
+
+#[cfg(test)]
+mod longest_run_tests;

@@ -1,6 +1,7 @@
 mod frequency_block;
 mod frequency_monobit;
 mod logger;
+mod longest_run;
 mod runs;
 mod tests;
 mod utils;
