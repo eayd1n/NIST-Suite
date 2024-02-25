@@ -1,6 +1,7 @@
 mod frequency_block;
 mod frequency_monobit;
 mod logger;
+mod runs;
 mod tests;
 mod utils;
 

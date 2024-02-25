@@ -1,7 +1,25 @@
 //! This module performs the Frequency within a block Test.
+//!
+//! Description of test from NIST SP 800-22:
+//!
+//! The focus of the test is the proportion of ones within M-bit blocks. The purpose of this test is to determine
+//! whether the frequency of ones in an M-bit block is approximately M/2, as would be expected under an
+//! assumption of randomness. For block size M=1, this test degenerates to test 1, the Frequency (Monobit)
+//! test.
 
 use anyhow::Result;
 
+/// Perform the Frequncy within a block test.
+///
+/// # Arguments
+///
+/// bit_string - The bit string to be tested for randomness
+///
+/// # Return
+///
+/// Ok(p-value >= 0.01) - If true, given bit string can be concluded as random. Otherwise
+/// non-random
+/// Err(err) - Some error occured
 pub fn perform_test(bit_string: &str) -> Result<bool> {
     log::trace!("frequency_block::perform_test()");
 
@@ -11,7 +29,7 @@ pub fn perform_test(bit_string: &str) -> Result<bool> {
     }
 
     let length = bit_string.len();
-    log::info!("Bit string '{}' has the length {}", bit_string, length);
+    log::debug!("Bit string '{}' has the length {}", bit_string, length);
 
     // Recommended size is at least 100 bits. It is not an error but log a warning
     if length < 100 {

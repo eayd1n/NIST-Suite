@@ -31,7 +31,7 @@ pub fn perform_test(bit_string: &str) -> Result<bool> {
     }
 
     let length = bit_string.len();
-    log::info!("Bit string '{}' has the length {}", bit_string, length);
+    log::debug!("Bit string '{}' has the length {}", bit_string, length);
 
     // Recommended size is at least 100 bits. It is not an error but log a warning
     if length < 100 {

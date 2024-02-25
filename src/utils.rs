@@ -11,6 +11,17 @@ pub fn read_hex_string_from_file(file_path: &str) -> Result<String> {
     }
 }
 */
+
+/// Convert a given hexadecimal string into a bit string.
+///
+/// # Arguments
+///
+/// hex_string - An hexadecimal string to be converted
+///
+/// # Return
+///
+/// Ok(bit_string) - The bit string converted from given hex string
+/// Err(err) - Some error occured
 pub fn hex_to_bit_string(hex_string: &str) -> Result<String> {
     log::trace!("utils::hex_to_bit_string()");
 
