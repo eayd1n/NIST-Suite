@@ -1,7 +1,16 @@
 //! This module contains useful functions to support the statistical tests.
 
 use anyhow::Result;
+/*
+pub fn read_hex_string_from_file(file_path: &str) -> Result<String> {
+    log::trace!("utils::read_hex_string_from_file()");
 
+    // first of all, check whether file exists or not
+    if !std::path::Path::new(file_path).exists() {
+        anyhow::bail!("File containing random numbers does not exist: '{}'", file_path);
+    }
+}
+*/
 pub fn hex_to_bit_string(hex_string: &str) -> Result<String> {
     log::trace!("utils::hex_to_bit_string()");
 

@@ -60,12 +60,12 @@ pub fn perform_test(bit_string: &str) -> Result<bool> {
     let partial_sum = (count_zero - count_one) as f64;
 
     // now calculate observed value S_obs = |S_n| / sqrt(length)
-    let observed = (partial_sum.abs() / (length as f64).sqrt()) as f64;
+    let observed = partial_sum.abs() / (length as f64).sqrt();
     log::info!("Observed value S_obs: {}", observed);
 
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function erfc(observed / sqrt(2))
-    let p_value = libm::erfc(observed / f64::sqrt(2.0));
+    let p_value = statrs::function::erf::erfc(observed / f64::sqrt(2.0));
     log::info!("p-value of bit string is {}", p_value);
 
     Ok(p_value >= 0.01)
