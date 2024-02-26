@@ -125,7 +125,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // finally compute p-value with the incomplete gamma function
     let p_value =
-        statrs::function::gamma::gamma_ur(((pi_values.len() as f64) - 1.0) / 2.0, chi_square / 2.0);
+        statrs::function::gamma::gamma_ur(((pi_values.len() as f64) - 1.0) * 0.5, chi_square * 0.5);
     log::debug!(
         "Longest Run Within a Block: p-value of bit string is {}",
         p_value

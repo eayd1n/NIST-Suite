@@ -9,6 +9,8 @@
 
 use anyhow::Result;
 
+const RECOMMENDED_SIZE: usize = 100;
+
 /// Perform the Frequncy within a block test.
 ///
 /// # Arguments
@@ -32,8 +34,12 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     // (length / 100)
     let length = bit_string.len();
 
-    if block_size_m >= length || block_size_m <= (length / 100) {
-        anyhow::bail!("Choose block size as of {} < M < {}", length / 100, length);
+    if block_size_m >= length || block_size_m <= (length / RECOMMENDED_SIZE) {
+        anyhow::bail!(
+            "Choose block size as of {} < M < {}",
+            length / RECOMMENDED_SIZE,
+            length
+        );
     }
 
     log::debug!(
@@ -43,7 +49,7 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     );
 
     // Recommended size is at least 100 bits. It is not an error but log a warning anyways
-    if length < 100 {
+    if length < RECOMMENDED_SIZE {
         log::warn!(
             "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
         );
@@ -51,7 +57,7 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
 
     // calculate number of blocks N by floor(length/block_size_m). N should be < 100
     let n_blocks = length / block_size_m;
-    if n_blocks >= 100 {
+    if n_blocks >= RECOMMENDED_SIZE {
         anyhow::bail!(
             "Number of blocks exceed 100: {}. Please choose a larger M",
             n_blocks
@@ -81,12 +87,12 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
         index += block_size_m;
     }
 
-    // now compute the chi_square statistics: chi_square = 4 * M * sum(p_i - 1/2)^2
+    // now compute the chi_square statistics: chi_square = 4 * M * sum(p_i - 0.5)^2
     let mut observed = 0.0;
 
     for (index, pi) in pi_i.iter().enumerate() {
         log::trace!("pi_{}: {}", index + 1, pi);
-        observed += (pi - 1.0 / 2.0).powf(2.0);
+        observed += (pi - 0.5).powf(2.0);
     }
     log::debug!("Calculated observed value {}", observed);
 

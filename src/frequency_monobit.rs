@@ -11,6 +11,8 @@
 
 use anyhow::Result;
 
+const RECOMMENDED_SIZE: usize = 100;
+
 /// Perform the Frequency Monobit Test by determining the p-value.
 ///
 /// # Arguments
@@ -33,7 +35,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::debug!("Bit string has the length {}", length);
 
     // Recommended size is at least 100 bits. It is not an error but log a warning anyways
-    if length < 100 {
+    if length < RECOMMENDED_SIZE {
         log::warn!(
             "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
         );

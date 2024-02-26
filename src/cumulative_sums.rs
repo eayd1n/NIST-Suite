@@ -13,6 +13,8 @@
 use anyhow::Result;
 use statrs::distribution::ContinuousCDF;
 
+const RECOMMENDED_SIZE: usize = 100;
+
 #[derive(Debug, PartialEq)]
 pub enum Mode {
     Forward,
@@ -44,7 +46,7 @@ pub fn perform_test(bit_string: &str, mode: Mode) -> Result<f64> {
     log::debug!("Bit string has the length {}", length);
 
     // Recommended size is at least 100 bits. It is not an error but log a warning anyways
-    if length < 100 {
+    if length < RECOMMENDED_SIZE {
         log::warn!(
             "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
         );
