@@ -298,13 +298,29 @@ checksum = "d506eb7e08d6329505faa8a3a00a5dcc6de9f76e0c77e4b75763ae3c770831ff"
 dependencies = [
  "approx",
  "matrixmultiply",
- "nalgebra-macros",
+ "nalgebra-macros 0.1.0",
  "num-complex",
  "num-rational",
  "num-traits",
  "rand",
  "rand_distr",
- "simba",
+ "simba 0.6.0",
+ "typenum",
+]
+
+[[package]]
+name = "nalgebra"
+version = "0.32.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4541eb06dce09c0241ebbaab7102f0a01a0c8994afed2e5d0d66775016e25ac2"
+dependencies = [
+ "approx",
+ "matrixmultiply",
+ "nalgebra-macros 0.2.1",
+ "num-complex",
+ "num-rational",
+ "num-traits",
+ "simba 0.8.1",
  "typenum",
 ]
 
@@ -313,6 +329,17 @@ name = "nalgebra-macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01fcc0b8149b4632adc89ac3b7b31a12fb6099a0317a4eb2ebff574ef7de7218"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "nalgebra-macros"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91761aed67d03ad966ef783ae962ef9bbaca728d2dd7ceb7939ec110fffad998"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -520,6 +547,7 @@ dependencies = [
  "anyhow",
  "env_logger",
  "log",
+ "nalgebra 0.32.4",
  "serial_test",
  "statrs",
 ]
@@ -578,6 +606,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "simba"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "061507c94fc6ab4ba1c9a0305018408e312e17c041eb63bef8aa726fa33aceae"
+dependencies = [
+ "approx",
+ "num-complex",
+ "num-traits",
+ "paste",
+ "wide",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -600,7 +641,7 @@ checksum = "2d08e5e1748192713cc281da8b16924fb46be7b0c2431854eadc785823e5696e"
 dependencies = [
  "approx",
  "lazy_static",
- "nalgebra",
+ "nalgebra 0.29.0",
  "num-traits",
  "rand",
 ]

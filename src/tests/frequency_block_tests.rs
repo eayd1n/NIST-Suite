@@ -8,6 +8,7 @@ mod tests {
     const BIT_STRING_1: &str = "0110011010";
     const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_3: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
+    const BIT_STRING_4: &str = "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
 
     #[test]
@@ -15,9 +16,10 @@ mod tests {
     fn test_frequency_block() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        assert!(frequency_block::perform_test(BIT_STRING_1).unwrap());
-        assert!(!frequency_block::perform_test(BIT_STRING_2).unwrap());
-        assert!(frequency_block::perform_test(BIT_STRING_3).unwrap());
+        assert!(frequency_block::perform_test(BIT_STRING_1, 3).unwrap() >= 0.01);
+        assert!(frequency_block::perform_test(BIT_STRING_2, 10).unwrap() < 0.01);
+        assert!(frequency_block::perform_test(BIT_STRING_3, 10).unwrap() >= 0.01);
+        assert!(frequency_block::perform_test(BIT_STRING_4, 10).unwrap() < 0.01);
     }
 
     #[test]
@@ -28,14 +30,27 @@ mod tests {
         let mut success: bool;
 
         // pass empty string
-        match frequency_block::perform_test("") {
+        match frequency_block::perform_test("", 10) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };
         assert!(!success);
 
         // pass invalid bit string
-        match frequency_block::perform_test(INVALID_BIT_STRING) {
+        match frequency_block::perform_test(INVALID_BIT_STRING, 10) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        // pass wrong sizes of M
+        match frequency_block::perform_test(BIT_STRING_3, BIT_STRING_3.len()) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        match frequency_block::perform_test(BIT_STRING_3, 0) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };

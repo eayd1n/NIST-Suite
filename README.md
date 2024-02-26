@@ -2,8 +2,6 @@
 
 The NIST Suite contains fifteen statistical tests to verify the randomness of given numbers.
 
-## Usage
-
 The following tests are performed within the Suite:
 
 1. The Frequency (Monobit) Test,
@@ -23,3 +21,5 @@ The following tests are performed within the Suite:
 15. The Random Excursions Variant Test.
 
 For more detailed information, please refer to [A Statistical Test Suite for Random and Pseudorandom Number Generators for Cryptographic Applications](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf)
+
+## Usage

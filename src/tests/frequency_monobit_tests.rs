@@ -16,10 +16,10 @@ mod tests {
     fn test_frequency_monobit() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        assert!(frequency_monobit::perform_test(BIT_STRING_1).unwrap());
-        assert!(!frequency_monobit::perform_test(BIT_STRING_2).unwrap());
-        assert!(!frequency_monobit::perform_test(BIT_STRING_3).unwrap());
-        assert!(frequency_monobit::perform_test(BIT_STRING_4).unwrap());
+        assert!(frequency_monobit::perform_test(BIT_STRING_1).unwrap() >= 0.01);
+        assert!(frequency_monobit::perform_test(BIT_STRING_2).unwrap() < 0.01);
+        assert!(frequency_monobit::perform_test(BIT_STRING_3).unwrap() < 0.01);
+        assert!(frequency_monobit::perform_test(BIT_STRING_4).unwrap() >= 0.01);
     }
 
     #[test]

@@ -6,8 +6,10 @@ mod tests {
 
     const LOGLEVEL: &str = "Trace";
     const BIT_STRING_1: &str = "1001101011";
-    const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000";
+    const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_3: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
+    const BIT_STRING_4: &str = "1010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010";
+    const BIT_STRING_5: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
 
     #[test]
@@ -15,9 +17,11 @@ mod tests {
     fn test_runs() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        assert!(runs::perform_test(BIT_STRING_1).unwrap());
-        assert!(!runs::perform_test(BIT_STRING_2).unwrap());
-        assert!(runs::perform_test(BIT_STRING_3).unwrap());
+        assert!(runs::perform_test(BIT_STRING_1).unwrap() > 0.01);
+        assert!(runs::perform_test(BIT_STRING_2).unwrap() <= 0.01);
+        assert!(runs::perform_test(BIT_STRING_3).unwrap() > 0.01);
+        assert!(runs::perform_test(BIT_STRING_4).unwrap() <= 0.01);
+        assert!(runs::perform_test(BIT_STRING_5).unwrap() <= 0.01);
     }
 
     #[test]
