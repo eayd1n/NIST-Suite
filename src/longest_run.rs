@@ -13,7 +13,7 @@ use crate::constants;
 use crate::customtypes;
 use crate::utils;
 use anyhow::Result;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// Perform the Longest Run of Ones in a Block test.
 ///
@@ -69,7 +69,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
     // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
-    let mut counts: HashMap<i32, i32> = HashMap::new();
+    let mut counts: BTreeMap<i32, i32> = BTreeMap::new();
 
     for i in (0..length).step_by(config.block_size_m) {
         let end_index = (i + config.block_size_m).min(length);
@@ -79,25 +79,22 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
-    let vi_counts_unsorted = calculate_vi_values(counts, config.thresholds);
-    let mut vi_counts: Vec<_> = vi_counts_unsorted.keys().cloned().collect();
-    vi_counts.sort();
+    let vi_counts = calculate_vi_values(counts, config.thresholds);
+    log::trace!("Number of runs: {:?}", vi_counts);
 
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
 
     // iterate over vi_values and pi_values at the sime time because both have same size
-    for (key, &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
-        if let Some(vi_value) = vi_counts_unsorted.get(key) {
-            log::trace!(
-                "Current vi_value: {}, current pi_value: {}",
-                *vi_value,
-                pi_value
-            );
+    for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
+        log::trace!(
+            "Current vi_value: {}, current pi_value: {}",
+            *vi_value,
+            pi_value
+        );
 
-            let constant = (config.n_blocks as f64) * pi_value;
-            chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
-        }
+        let constant = (config.n_blocks as f64) * pi_value;
+        chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
     }
     log::debug!("Value of chi_square: {}", chi_square);
 
@@ -112,47 +109,6 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     );
 
     Ok(p_value)
-}
-
-/// Calculcate the v_i values. Those are basically counters what longest run number occured how
-/// often.
-///
-/// # Arguments
-///
-/// run_counts - A hashmap with collected longest run counts
-/// thresholds - Minimum and maximum thresholds to merge specific counts
-///
-/// # Return
-///
-/// vi_counts - The collected v_i values
-fn calculate_vi_values(run_counts: HashMap<i32, i32>, thresholds: (i32, i32)) -> HashMap<i32, i32> {
-    log::trace!("longest_run::calculate_vi_values()");
-
-    let mut vi_counts: HashMap<i32, i32> = HashMap::new();
-
-    for (&key, &value) in &run_counts {
-        if key <= thresholds.0 {
-            *vi_counts.entry(thresholds.0).or_insert(0) += value;
-        } else if key >= thresholds.1 {
-            *vi_counts.entry(thresholds.1).or_insert(0) += value;
-        } else {
-            *vi_counts.entry(key).or_insert(0) += value;
-        }
-    }
-
-    // If there were no counts less than or equal to the min threshold,
-    // insert a zero count for the min threshold
-    if !run_counts.contains_key(&thresholds.0) {
-        vi_counts.insert(thresholds.0, 0);
-    }
-
-    // If there were no counts greater than or equal to the max threshold,
-    // insert a zero count for the max threshold
-    if !run_counts.contains_key(&thresholds.1) {
-        vi_counts.insert(thresholds.1, 0);
-    }
-
-    vi_counts
 }
 
 /// Get the longest run of ones in a given block.
@@ -181,4 +137,48 @@ fn count_max_consecutive_ones(block: &str) -> i32 {
 
     log::trace!("Block '{}', longest run of ones: {}", block, max_count);
     max_count
+}
+
+/// Calculcate the v_i values. Those are basically counters what longest run number occured how
+/// often.
+///
+/// # Arguments
+///
+/// run_counts - A hashmap with collected longest run counts
+/// thresholds - Minimum and maximum thresholds to merge specific counts
+///
+/// # Return
+///
+/// vi_counts - The collected v_i values
+fn calculate_vi_values(
+    run_counts: BTreeMap<i32, i32>,
+    thresholds: (i32, i32),
+) -> BTreeMap<i32, i32> {
+    log::trace!("longest_run::calculate_vi_values()");
+
+    let mut vi_counts: BTreeMap<i32, i32> = BTreeMap::new();
+
+    for (&key, &value) in &run_counts {
+        if key <= thresholds.0 {
+            *vi_counts.entry(thresholds.0).or_insert(0) += value;
+        } else if key >= thresholds.1 {
+            *vi_counts.entry(thresholds.1).or_insert(0) += value;
+        } else {
+            *vi_counts.entry(key).or_insert(0) += value;
+        }
+    }
+
+    // If there were no counts less than or equal to the min threshold,
+    // insert a zero count for the min threshold
+    if !run_counts.contains_key(&thresholds.0) {
+        vi_counts.insert(thresholds.0, 0);
+    }
+
+    // If there were no counts greater than or equal to the max threshold,
+    // insert a zero count for the max threshold
+    if !run_counts.contains_key(&thresholds.1) {
+        vi_counts.insert(thresholds.1, 0);
+    }
+
+    vi_counts
 }
