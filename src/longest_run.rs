@@ -9,6 +9,7 @@
 //! the expected length of the longest run of ones implies that there is also an irregularity in the expected
 //! length of the longest run of zeroes. Therefore, only a test for ones is necessary."
 
+use crate::customtypes;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -49,7 +50,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     let length = bit_string.len();
     if length < MIN_LENGTH {
         anyhow::bail!(
-            "Bit string needs at least 128 bits! Actual length: {}",
+            "Bit string needs at least {} bits! Actual length: {}",
+            MIN_LENGTH,
             length
         );
     }
@@ -61,55 +63,53 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     log::debug!("Bit string has the length {}", length);
 
-    // depending on length of bit string, choose the correct value for M (number of bits per block)
-    // and N (number of blocks) and thresholds (min, max)
-    let block_size_m;
-    let n_blocks;
-    let thresholds;
-    let pi_values: &[f64];
+    // depending on length of bit string, choose the correct value for M (number of bits per
+    // block), N (number of blocks), thresholds (min, max) and the pre-computed pi_values
+    let config: customtypes::LongestRunConfig;
 
     if length >= MIN_LENGTH && length < MID_LENGTH {
-        block_size_m = MIN_SIZE_M;
-        n_blocks = MIN_SIZE_N;
-        thresholds = MIN_THRESHOLDS;
-        pi_values = &MIN_PI_VALUES;
+        config = customtypes::LongestRunConfig::create(
+            MIN_SIZE_M,
+            MIN_SIZE_N,
+            MIN_THRESHOLDS,
+            &MIN_PI_VALUES,
+        );
     } else if length >= MID_LENGTH && length < MAX_LENGTH {
-        block_size_m = MID_SIZE_M;
-        n_blocks = MID_SIZE_N;
-        thresholds = MID_THRESHOLDS;
-        pi_values = &MID_PI_VALUES;
+        config = customtypes::LongestRunConfig::create(
+            MID_SIZE_M,
+            MID_SIZE_N,
+            MID_THRESHOLDS,
+            &MID_PI_VALUES,
+        );
     } else {
-        block_size_m = MAX_SIZE_M;
-        n_blocks = MAX_SIZE_N;
-        thresholds = MAX_THRESHOLDS;
-        pi_values = &MAX_PI_VALUES;
+        config = customtypes::LongestRunConfig::create(
+            MAX_SIZE_M,
+            MAX_SIZE_N,
+            MAX_THRESHOLDS,
+            &MAX_PI_VALUES,
+        );
     }
-    log::info!(
-        "Block size M: {}, Number of Blocks N: {}, Thresholds to use: {:?}",
-        block_size_m,
-        n_blocks,
-        thresholds
-    );
+    log::debug!("{:?}", config);
 
     // determine the number of runs per block and calculate v_i
     let mut counts: HashMap<i32, i32> = HashMap::new();
 
-    for i in (0..length).step_by(block_size_m) {
-        let end_index = (i + block_size_m).min(length);
+    for i in (0..length).step_by(config.block_size_m) {
+        let end_index = (i + config.block_size_m).min(length);
         let block = &bit_string[i..end_index];
         let max_consecutive_ones = count_max_consecutive_ones(block);
 
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
-    let vi_counts_unsorted = calculate_vi_values(counts, thresholds);
+    let vi_counts_unsorted = calculate_vi_values(counts, config.thresholds);
     let mut vi_counts: Vec<_> = vi_counts_unsorted.keys().cloned().collect();
     vi_counts.sort();
 
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
 
-    for (key, &pi_value) in vi_counts.iter().zip(pi_values.iter()) {
+    for (key, &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
         if let Some(vi_value) = vi_counts_unsorted.get(key) {
             log::trace!(
                 "Current vi_value: {}, current pi_value: {}",
@@ -117,15 +117,17 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
                 pi_value
             );
 
-            let constant = (n_blocks as f64) * pi_value;
+            let constant = (config.n_blocks as f64) * pi_value;
             chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
         }
     }
     log::debug!("Value of chi_square: {}", chi_square);
 
     // finally compute p-value with the incomplete gamma function
-    let p_value =
-        statrs::function::gamma::gamma_ur(((pi_values.len() as f64) - 1.0) * 0.5, chi_square * 0.5);
+    let p_value = statrs::function::gamma::gamma_ur(
+        ((config.pi_values.len() as f64) - 1.0) * 0.5,
+        chi_square * 0.5,
+    );
     log::debug!(
         "Longest Run Within a Block: p-value of bit string is {}",
         p_value
@@ -172,11 +174,6 @@ fn calculate_vi_values(run_counts: HashMap<i32, i32>, thresholds: (i32, i32)) ->
         vi_counts.insert(thresholds.1, 0);
     }
 
-    // Print hashmap contents
-    for (key, value) in &vi_counts {
-        log::debug!("Calculated v_{} value: {}", key - 1, value);
-    }
-
     vi_counts
 }
 
@@ -204,6 +201,6 @@ fn count_max_consecutive_ones(block: &str) -> i32 {
         }
     }
 
-    log::debug!("Block '{}', longest run of ones: {}", block, max_count);
+    log::trace!("Block '{}', longest run of ones: {}", block, max_count);
     max_count
 }

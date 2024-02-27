@@ -37,7 +37,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // Recommended size is at least 100 bits. It is not an error but log a warning anyways
     if length < RECOMMENDED_SIZE {
         log::warn!(
-            "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
+            "Recommended size is at least {} bits. Consider imprecision when calculating p-value",
+            RECOMMENDED_SIZE
         );
     }
 

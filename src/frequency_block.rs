@@ -51,7 +51,8 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     // Recommended size is at least 100 bits. It is not an error but log a warning anyways
     if length < RECOMMENDED_SIZE {
         log::warn!(
-            "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
+            "Recommended size is at least {} bits. Consider imprecision when calculating p-value",
+            RECOMMENDED_SIZE
         );
     }
 
@@ -100,7 +101,13 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     log::debug!("Chi square for given bit string: {}", chi_square);
 
     // finally, compute the p-value using the incomplete gamma function: igamc(N/2, chi_square/2)
-    let p_value = statrs::function::gamma::gamma_ur((n_blocks as f64) / 2.0, chi_square / 2.0);
+    // Note: If we do have a perfect distribution (M/2 ones in each block), chi_square is zero
+    // which is an invalid input for igamc. Return p-value of 1 then
+    let p_value = if chi_square == 0.0 {
+        1.0
+    } else {
+        statrs::function::gamma::gamma_ur((n_blocks as f64) * 0.5, chi_square * 0.5)
+    };
     log::info!(
         "Frequency Within a Block: p-value of bit string is {}",
         p_value

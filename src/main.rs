@@ -1,4 +1,5 @@
 mod cumulative_sums;
+mod customtypes;
 mod frequency_block;
 mod frequency_monobit;
 mod logger;
