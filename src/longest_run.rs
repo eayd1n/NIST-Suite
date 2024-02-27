@@ -9,30 +9,11 @@
 //! the expected length of the longest run of ones implies that there is also an irregularity in the expected
 //! length of the longest run of zeroes. Therefore, only a test for ones is necessary."
 
+use crate::constants;
 use crate::customtypes;
 use crate::utils;
 use anyhow::Result;
 use std::collections::HashMap;
-
-const MIN_LENGTH: usize = 128;
-const MID_LENGTH: usize = 6272;
-const MAX_LENGTH: usize = 750000;
-
-const MIN_SIZE_M: usize = 8;
-const MID_SIZE_M: usize = 128;
-const MAX_SIZE_M: usize = 10000;
-
-const MIN_SIZE_N: usize = 16;
-const MID_SIZE_N: usize = 49;
-const MAX_SIZE_N: usize = 75;
-
-const MIN_THRESHOLDS: (i32, i32) = (1, 4);
-const MID_THRESHOLDS: (i32, i32) = (4, 9);
-const MAX_THRESHOLDS: (i32, i32) = (10, 16);
-
-static MIN_PI_VALUES: [f64; 4] = [0.2148, 0.3672, 0.2305, 0.1875];
-static MID_PI_VALUES: [f64; 6] = [0.1174, 0.2430, 0.2493, 0.1752, 0.1027, 0.1124];
-static MAX_PI_VALUES: [f64; 7] = [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675, 0.0727];
 
 /// Perform the Longest Run of Ones in a Block test.
 ///
@@ -47,13 +28,13 @@ static MAX_PI_VALUES: [f64; 7] = [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("longest_run::perform_test()");
 
-    let length = utils::evaluate_bit_string(bit_string, MIN_LENGTH)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::MIN_LENGTH)?;
 
     // it is crucial to have at least 128 bit passed for the test
-    if length < MIN_LENGTH {
+    if length < constants::MIN_LENGTH {
         anyhow::bail!(
             "Bit string needs at least {} bits! Actual length: {}",
-            MIN_LENGTH,
+            constants::MIN_LENGTH,
             length
         );
     }
@@ -62,26 +43,26 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // block), N (number of blocks), thresholds (min, max) and the pre-computed pi_values
     let config: customtypes::LongestRunConfig;
 
-    if length >= MIN_LENGTH && length < MID_LENGTH {
+    if length >= constants::MIN_LENGTH && length < constants::MID_LENGTH {
         config = customtypes::LongestRunConfig::create(
-            MIN_SIZE_M,
-            MIN_SIZE_N,
-            MIN_THRESHOLDS,
-            &MIN_PI_VALUES,
+            constants::MIN_SIZE_M,
+            constants::MIN_SIZE_N,
+            constants::MIN_THRESHOLDS,
+            &constants::MIN_PI_VALUES,
         );
-    } else if length >= MID_LENGTH && length < MAX_LENGTH {
+    } else if length >= constants::MID_LENGTH && length < constants::MAX_LENGTH {
         config = customtypes::LongestRunConfig::create(
-            MID_SIZE_M,
-            MID_SIZE_N,
-            MID_THRESHOLDS,
-            &MID_PI_VALUES,
+            constants::MID_SIZE_M,
+            constants::MID_SIZE_N,
+            constants::MID_THRESHOLDS,
+            &constants::MID_PI_VALUES,
         );
     } else {
         config = customtypes::LongestRunConfig::create(
-            MAX_SIZE_M,
-            MAX_SIZE_N,
-            MAX_THRESHOLDS,
-            &MAX_PI_VALUES,
+            constants::MAX_SIZE_M,
+            constants::MAX_SIZE_N,
+            constants::MAX_THRESHOLDS,
+            &constants::MAX_PI_VALUES,
         );
     }
     log::debug!("{:?}", config);

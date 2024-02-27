@@ -9,10 +9,9 @@
 //! is, the number of ones and zeroes in a sequence should be about the same. All subsequent tests depend on
 //! the passing of this test."
 
+use crate::constants;
 use crate::utils;
 use anyhow::Result;
-
-const RECOMMENDED_SIZE: usize = 100;
 
 /// Perform the Frequency Monobit Test by determining the p-value.
 ///
@@ -27,7 +26,7 @@ const RECOMMENDED_SIZE: usize = 100;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("frequency_monobit::perform_test()");
 
-    let length = utils::evaluate_bit_string(bit_string, RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
 
     // first of all, we need to compute the partial sum S_n. This is the difference between #ones and #zeroes
     let count_zero = bit_string.chars().filter(|&c| c == '0').count();

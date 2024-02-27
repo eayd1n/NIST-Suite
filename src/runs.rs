@@ -9,10 +9,9 @@
 //! ones and zeros of various lengths is as expected for a random sequence. In particular, this test determines
 //! whether the oscillation between such zeros and ones is too fast or too slow."
 
+use crate::constants;
 use crate::utils;
 use anyhow::Result;
-
-const RECOMMENDED_SIZE: usize = 100;
 
 /// Perform the Runs test.
 ///
@@ -27,7 +26,7 @@ const RECOMMENDED_SIZE: usize = 100;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("runs::perform_test()");
 
-    let length = utils::evaluate_bit_string(bit_string, RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
 
     // first of all, determine the number of ones in given bit string and compute pre-test
     // proportion: #ones/length

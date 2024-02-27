@@ -7,10 +7,9 @@
 //! assumption of randomness. For block size M=1, this test degenerates to test 1, the Frequency (Monobit)
 //! test."
 
+use crate::constants;
 use crate::utils;
 use anyhow::Result;
-
-const RECOMMENDED_SIZE: usize = 100;
 
 /// Perform the Frequncy within a block test.
 ///
@@ -26,27 +25,28 @@ const RECOMMENDED_SIZE: usize = 100;
 pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     log::trace!("frequency_block::perform_test()");
 
-    let length = utils::evaluate_bit_string(bit_string, RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
 
     // check validity of block size M. M should be less than bit string length but greater than
     // (length / 100)
-    if block_size_m >= length || block_size_m <= (length / RECOMMENDED_SIZE) {
+    if block_size_m >= length || block_size_m <= (length / constants::RECOMMENDED_SIZE) {
         anyhow::bail!(
             "Choose block size as of {} < M < {}",
-            length / RECOMMENDED_SIZE,
+            length / constants::RECOMMENDED_SIZE,
             length
         );
     }
 
     // calculate number of blocks N by floor(length/block_size_m). N should be < 100
     let n_blocks = length / block_size_m;
-    if n_blocks >= RECOMMENDED_SIZE {
+    if n_blocks >= constants::RECOMMENDED_SIZE {
         anyhow::bail!(
             "Number of blocks exceed 100: {}. Please choose a larger M",
             n_blocks
         );
     }
 
+    log::debug!("Block size M: {}", block_size_m);
     log::info!("Number of blocks N to proceed: {}", n_blocks);
 
     // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size_m
