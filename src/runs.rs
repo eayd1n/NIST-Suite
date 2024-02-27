@@ -9,6 +9,7 @@
 //! ones and zeros of various lengths is as expected for a random sequence. In particular, this test determines
 //! whether the oscillation between such zeros and ones is too fast or too slow."
 
+use crate::utils;
 use anyhow::Result;
 
 const RECOMMENDED_SIZE: usize = 100;
@@ -26,21 +27,7 @@ const RECOMMENDED_SIZE: usize = 100;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("runs::perform_test()");
 
-    // check validity of passed bit string
-    if bit_string.is_empty() || bit_string.chars().any(|c| c != '0' && c != '1') {
-        anyhow::bail!("Bit string is either empty or contains invalid character(s)");
-    }
-
-    let length = bit_string.len();
-    log::debug!("Bit string has the length {}", length);
-
-    // Recommended size is at least 100 bits. It is not an error but log a warning anyways
-    if length < RECOMMENDED_SIZE {
-        log::warn!(
-            "Recommended size is at least {} bits. Consider imprecision when calculating p-value",
-            RECOMMENDED_SIZE
-        );
-    }
+    let length = utils::evaluate_bit_string(bit_string, RECOMMENDED_SIZE)?;
 
     // first of all, determine the number of ones in given bit string and compute pre-test
     // proportion: #ones/length

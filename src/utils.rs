@@ -12,6 +12,39 @@ pub fn read_hex_string_from_file(file_path: &str) -> Result<String> {
 }
 */
 
+/// Evaluate passed bit string.
+///
+/// # Arguments
+///
+/// bit_string - The bit string to evaluate
+/// recommended_size - Log a warning if passed bit string has not recommended size
+///
+/// # Return
+///
+/// Ok(length) - Return length of bit string if everything is okay
+/// Err(err) - Some error occured
+pub fn evaluate_bit_string(bit_string: &str, recommended_size: usize) -> Result<usize> {
+    log::trace!("utils::evaluate_bit_string()");
+
+    // check validity of passed bit string
+    if bit_string.is_empty() || bit_string.chars().any(|c| c != '0' && c != '1') {
+        anyhow::bail!("Bit string is either empty or contains invalid character(s)");
+    }
+
+    let length = bit_string.len();
+    log::debug!("Bit string has the length {}", length);
+
+    // If bit string has not the recommended size, it is not an error but log a warning anyways
+    if length < recommended_size {
+        log::warn!(
+            "Recommended size is at least {} bits. Consider imprecision when calculating p-value",
+            recommended_size
+        );
+    }
+
+    Ok(length)
+}
+
 /// Convert a given hexadecimal string into a bit string.
 ///
 /// # Arguments

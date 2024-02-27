@@ -10,6 +10,7 @@
 //! length of the longest run of zeroes. Therefore, only a test for ones is necessary."
 
 use crate::customtypes;
+use crate::utils;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -46,8 +47,9 @@ static MAX_PI_VALUES: [f64; 7] = [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("longest_run::perform_test()");
 
-    // it is crucial to have at least 128 bits passed
-    let length = bit_string.len();
+    let length = utils::evaluate_bit_string(bit_string, MIN_LENGTH)?;
+
+    // it is crucial to have at least 128 bit passed for the test
     if length < MIN_LENGTH {
         anyhow::bail!(
             "Bit string needs at least {} bits! Actual length: {}",
@@ -55,13 +57,6 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
             length
         );
     }
-
-    // check validity of passed bit string
-    if bit_string.chars().any(|c| c != '0' && c != '1') {
-        anyhow::bail!("Bit string contains invalid character(s)");
-    }
-
-    log::debug!("Bit string has the length {}", length);
 
     // depending on length of bit string, choose the correct value for M (number of bits per
     // block), N (number of blocks), thresholds (min, max) and the pre-computed pi_values
@@ -91,7 +86,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     }
     log::debug!("{:?}", config);
 
-    // determine the number of runs per block and calculate v_i
+    // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
+    // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
     let mut counts: HashMap<i32, i32> = HashMap::new();
 
     for i in (0..length).step_by(config.block_size_m) {
@@ -109,6 +105,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
 
+    // iterate over vi_values and pi_values at the sime time because both have same size
     for (key, &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
         if let Some(vi_value) = vi_counts_unsorted.get(key) {
             log::trace!(
@@ -136,7 +133,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     Ok(p_value)
 }
 
-/// Calculcate the v_i values. Those are basically counters wh<t longest run number occured how
+/// Calculcate the v_i values. Those are basically counters what longest run number occured how
 /// often.
 ///
 /// # Arguments
