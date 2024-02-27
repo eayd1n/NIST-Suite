@@ -14,4 +14,7 @@ mod runs_tests;
 mod longest_run_tests;
 
 #[cfg(test)]
+mod binary_matrix_rank_tests;
+
+#[cfg(test)]
 mod cumulative_sums_tests;

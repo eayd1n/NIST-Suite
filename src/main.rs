@@ -1,3 +1,4 @@
+mod binary_matrix_rank;
 mod constants;
 mod cumulative_sums;
 mod customtypes;
