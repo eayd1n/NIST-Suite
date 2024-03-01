@@ -2,14 +2,16 @@
 mod tests {
     use crate::logger;
     use crate::longest_run;
+    use crate::utils;
     use serial_test::serial;
 
-    const LOGLEVEL: &str = "Trace";
+    const LOGLEVEL: &str = "Debug";
     // Example from NIST paper. p-value should be 0.180598
     const BIT_STRING_1: &str = "11001100000101010110110001001100111000000000001001001101010100010001001111010110100000001101011111001100111001101101100010110010";
     const BIT_STRING_2: &str = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_3: &str = "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
     const INVALID_BIT_STRING: &str = "1100110000010101011011000100110011100000000000100100110101010001000100a111010110100000001101011111001100111001101101100010110010";
+    const NUMBER_OF_BYTES: usize = 125000;
 
     #[test]
     #[serial]
@@ -20,6 +22,11 @@ mod tests {
         // although both bit strings are obviously not random, longest run test can not detect it
         assert!(longest_run::perform_test(BIT_STRING_2).unwrap() >= 0.01);
         assert!(longest_run::perform_test(BIT_STRING_3).unwrap() >= 0.01);
+
+        // test 1,000,000 newly generated random bits
+        let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
+        let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
+        assert!(longest_run::perform_test(&bit_string).unwrap() >= 0.01);
     }
 
     #[test]

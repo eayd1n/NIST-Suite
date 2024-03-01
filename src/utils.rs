@@ -1,6 +1,7 @@
 //! This module contains useful functions to support the statistical tests from the NIST suite.
 
 use anyhow::{Context, Result};
+use hex;
 use openssl::rand::rand_bytes;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -63,88 +64,74 @@ pub fn evaluate_bit_string(bit_string: &str, recommended_size: usize) -> Result<
     Ok(length)
 }
 
-/// Convert a given hexadecimal string into a bit string.
+/// Convert a given vector of hexadecimal bytes into a bit string.
 ///
 /// # Arguments
 ///
-/// hex_string - An hexadecimal string to be converted
+/// hex_bytes - A byte vector to be converted
 ///
 /// # Return
 ///
 /// Ok(bit_string) - The bit string converted from given hex string
 /// Err(err) - Some error occured
-pub fn hex_to_bit_string(hex_string: &str) -> Result<String> {
-    log::trace!("utils::hex_to_bit_string()");
+pub fn hex_bytes_to_bit_string(hex_bytes: Vec<u8>) -> Result<String> {
+    log::trace!("utils::hex_bytes_to_bit_string()");
 
-    // check if given string is empty or not
-    if hex_string.is_empty() {
-        anyhow::bail!("No hexadecimal string to convert passed!");
+    // check if given vector is empty or not
+    if hex_bytes.is_empty() {
+        anyhow::bail!("No hexadecimal bytes to convert passed!");
     }
 
-    // remove potential "0x" in the beginning of an hex string
-    let hex_string = if hex_string.starts_with("0x") {
-        &hex_string[2..]
-    } else {
-        hex_string
-    };
+    // now convert hex bytes to bit string
+    let bit_string = hex_bytes
+        .iter()
+        .flat_map(|&byte| {
+            (0..8)
+                .rev()
+                .map(move |i| if byte & (1 << i) == 0 { '0' } else { '1' })
+        })
+        .collect();
 
-    // validate the passed string contains valid hex bytes
-    if !hex_string.chars().all(|c| c.is_ascii_hexdigit()) {
-        anyhow::bail!("Invalid hex string: '{}'", hex_string);
-    }
-
-    // now convert valid hex string to bit string
-    let mut bit_string = String::new();
-
-    for hex_char in hex_string.chars() {
-        let byte = hex_char.to_digit(16).unwrap() as u8;
-        let binary_str = format!("{:04b}", byte);
-        bit_string.push_str(&binary_str);
-    }
-
-    log::debug!("Converted '{}' to '{}'", hex_string, &bit_string);
-    log::info!("Successfully converted hexadecimal string to bit string");
+    log::info!(
+        "Successfully converted {} hex bytes to bit string",
+        hex_bytes.len()
+    );
 
     Ok(bit_string)
 }
 
-/// Read file containing already generated random bytes (or bits) to let the NIST suite testing
-/// them.
+/// Read file containing already generated random bytes.
 ///
 /// # Arguments
 ///
-/// file_path - The path to the file containing random bytes/bits
+/// file_path - The path to the file containing random bytes
 ///
 /// # Return
 ///
-/// Ok(bit_string) - The read bit string. If hex bytes were stored in the file, convert them to
-/// binary string
+/// Ok(random_bytes) - The read random bytes
 /// Err(err) - Some error occured
-pub fn read_random_bytes(file_path: &str) -> Result<String> {
+pub fn read_random_bytes(file_path: &str) -> Result<Vec<u8>> {
     log::trace!("utils::read_random_bytes()");
 
     // open the file
     let mut file =
         File::open(file_path).with_context(|| format!("Failed to open file '{}'", file_path))?;
 
-    // read the contents of the file into a buffer
-    let mut buffer = String::new();
-    file.read_to_string(&mut buffer)
+    // read the contents of the file into a string
+    let mut hex_string = String::new();
+    file.read_to_string(&mut hex_string)
         .with_context(|| format!("Failed to read file '{}'", file_path))?;
 
-    // determine if the content is in hex format
-    let is_hex = buffer.chars().all(|c| c.is_ascii_hexdigit());
+    // remove any whitespace characters from the string
+    hex_string.retain(|c| !c.is_whitespace());
 
-    // convert to binary string if we do have hex bytes, otherwise return read in string
-    let bit_string = if is_hex {
-        hex_to_bit_string(&buffer)?
-    } else {
-        buffer
-    };
+    // parse the hexadecimal string into bytes
+    let random_bytes = hex::decode(&hex_string)
+        .map_err(|e| anyhow::anyhow!("Failed to parse hexadecimal string: {}", e))?;
 
-    log::info!("Read {} of random bits", bit_string.len());
+    log::info!("Successfully read {} random bytes", random_bytes.len());
 
-    Ok(bit_string)
+    Ok(random_bytes)
 }
 
 /// Write random bytes into file.
@@ -180,6 +167,12 @@ pub fn write_random_bytes(random_bytes: Vec<u8>, file_path: &str) -> Result<()> 
     // Write the bytes to the file
     file.write_all(hex_string.as_bytes())
         .with_context(|| format!("Failed to write to file '{}'", file_path))?;
+
+    log::info!(
+        "Successfully wrote {} random bytes to '{}'",
+        random_bytes.len(),
+        file_path
+    );
 
     Ok(())
 }

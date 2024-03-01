@@ -2,9 +2,10 @@
 mod tests {
     use crate::logger;
     use crate::runs;
+    use crate::utils;
     use serial_test::serial;
 
-    const LOGLEVEL: &str = "Trace";
+    const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "1001101011"; // Example from NIST paper. p-value should be 0.147232
     const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_3: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
@@ -12,6 +13,7 @@ mod tests {
     const BIT_STRING_5: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
     const BIT_STRING_6: &str = "1100110011001100110011001100110011001100110011001100110011001100110011001100110011001100110011001100";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
+    const NUMBER_OF_BYTES: usize = 125000;
 
     #[test]
     #[serial]
@@ -24,6 +26,11 @@ mod tests {
         assert!(runs::perform_test(BIT_STRING_4).unwrap() <= 0.01);
         assert!(runs::perform_test(BIT_STRING_5).unwrap() <= 0.01);
         assert!(runs::perform_test(BIT_STRING_6).unwrap() == 1.00);
+
+        // test 1,000,000 newly generated random bits
+        let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
+        let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
+        assert!(runs::perform_test(&bit_string).unwrap() >= 0.01);
     }
 
     #[test]

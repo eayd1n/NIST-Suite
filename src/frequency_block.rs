@@ -9,7 +9,7 @@
 
 use crate::constants;
 use crate::utils;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 /// Perform the Frequncy within a block test.
 ///
@@ -26,10 +26,13 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     log::trace!("frequency_block::perform_test()");
 
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+        .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // check block size M for validity and get number of blocks N
-    let n_blocks = evaluate_block_size(length, block_size_m)?;
+    let n_blocks = evaluate_block_size(length, block_size_m).with_context(|| {
+        "Either block size M or number of blocks N does not fit to defined requirements"
+    })?;
 
     // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size_m
     let mut pi_i = Vec::new();

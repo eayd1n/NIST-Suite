@@ -2,9 +2,10 @@
 mod tests {
     use crate::frequency_block;
     use crate::logger;
+    use crate::utils;
     use serial_test::serial;
 
-    const LOGLEVEL: &str = "Trace";
+    const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "0110011010"; // Example from NIST paper. p-value should be 0.801252
     const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_3: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
@@ -12,6 +13,8 @@ mod tests {
     const BIT_STRING_5: &str = "0000000000100000000000000000000000000100000000000000000000000000000010000000000000000000000000001000";
     const BIT_STRING_6: &str = "1111100000111110000011111000001111100000111110000011111000001111100000111110000011111000001111100000";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
+    const NUMBER_OF_BYTES: usize = 125000;
+    const BLOCK_SIZE_M: usize = 12500;
 
     #[test]
     #[serial]
@@ -24,6 +27,11 @@ mod tests {
         assert!(frequency_block::perform_test(BIT_STRING_4, 10).unwrap() < 0.01);
         assert!(frequency_block::perform_test(BIT_STRING_5, 20).unwrap() < 0.01);
         assert!(frequency_block::perform_test(BIT_STRING_6, 10).unwrap() == 1.00);
+
+        // test 1,000,000 newly generated random bits
+        let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
+        let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
+        assert!(frequency_block::perform_test(&bit_string, BLOCK_SIZE_M).unwrap() >= 0.01);
     }
 
     #[test]

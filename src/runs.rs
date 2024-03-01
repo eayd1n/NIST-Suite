@@ -11,7 +11,7 @@
 
 use crate::constants;
 use crate::utils;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 /// Perform the Runs test.
 ///
@@ -27,7 +27,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("runs::perform_test()");
 
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+        .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // determine the number of ones in given bit string and compute pre-test proportion = #ones/length
     let count_ones = bit_string.chars().filter(|&c| c == '1').count();

@@ -11,7 +11,7 @@
 
 use crate::constants;
 use crate::utils;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 /// Perform the Frequency Monobit Test by determining the p-value.
 ///
@@ -27,7 +27,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("frequency_monobit::perform_test()");
 
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+        .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // first of all, we need to compute the partial sum S_n. This is the difference between #ones and #zeroes
     let count_zeros = bit_string.chars().filter(|&c| c == '0').count();

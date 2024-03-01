@@ -12,7 +12,7 @@
 use crate::constants;
 use crate::customtypes;
 use crate::utils;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use std::collections::BTreeMap;
 
 /// Perform the Longest Run of Ones in a Block test.
@@ -29,10 +29,12 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("longest_run::perform_test()");
 
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::MIN_LENGTH)?;
+    let length = utils::evaluate_bit_string(bit_string, constants::MIN_LENGTH)
+        .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
-    // evaluate bit string length
-    let config = evaluate_bit_string_length(length)?;
+    // evaluate bit string length and determine longest run configuration
+    let config = get_longest_run_config(length)
+        .with_context(|| "Failed to retrieve longest run configuration")?;
 
     // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
     // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
@@ -46,8 +48,9 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
+    log::trace!("Number of runs before merge: {:?}", counts);
     let vi_counts = calculate_vi_values(counts, config.thresholds);
-    log::trace!("Number of runs: {:?}", vi_counts);
+    log::debug!("Number of runs after merge: {:?}", vi_counts);
 
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
@@ -65,7 +68,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     }
     log::debug!("Value of chi_square: {}", chi_square);
 
-    // finally compute p-value with the incomplete gamma function
+    // finally compute p-value with the incomplete gamma function: igamc(K/2, chi_square/2)
     let p_value = statrs::function::gamma::gamma_ur(
         ((config.pi_values.len() as f64) - 1.0) * 0.5,
         chi_square * 0.5,
@@ -85,8 +88,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 ///
 /// Ok(config) - Config parameters based on bit string size
 /// Err(err) - Some error occured
-fn evaluate_bit_string_length(length: usize) -> Result<customtypes::LongestRunConfig<'static>> {
-    log::trace!("longest_run::evaluate_bit_string_length()");
+fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig<'static>> {
+    log::trace!("longest_run::get_longest_run_config()");
 
     // it is crucial to have at least 128 bit passed for the test
     if length < constants::MIN_LENGTH {
