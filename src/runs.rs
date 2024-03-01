@@ -26,16 +26,17 @@ use anyhow::Result;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("runs::perform_test()");
 
+    // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
 
-    // first of all, determine the number of ones in given bit string and compute pre-test
-    // proportion: #ones/length
-    let count_one = bit_string.chars().filter(|&c| c == '1').count();
+    // determine the number of ones in given bit string and compute pre-test proportion = #ones/length
+    let count_ones = bit_string.chars().filter(|&c| c == '1').count();
 
-    let pre_test_proportion = (count_one as f64) / (length as f64);
+    let pre_test_proportion = (count_ones as f64) / (length as f64);
     log::debug!(
-        "Given bit string contains {} ones, pre-test proportion: {}",
-        count_one,
+        "Given bit string contains {} ones and {} zeros, pre-test proportion: {}",
+        count_ones,
+        length - count_ones,
         pre_test_proportion
     );
 
@@ -58,7 +59,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::debug!("Numerator: {}, Denominator: {}", numerator, denominator);
 
     let p_value = statrs::function::erf::erfc(numerator / denominator);
-    log::info!("Runs: p-value of bit string is: {}", p_value);
+    log::info!("Runs: p-value = {}", p_value);
 
     Ok(p_value)
 }

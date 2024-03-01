@@ -26,22 +26,23 @@ use anyhow::Result;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("frequency_monobit::perform_test()");
 
+    // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)?;
 
     // first of all, we need to compute the partial sum S_n. This is the difference between #ones and #zeroes
-    let count_zero = bit_string.chars().filter(|&c| c == '0').count();
-    let count_one = length - count_zero;
+    let count_zeros = bit_string.chars().filter(|&c| c == '0').count();
+    let count_ones = length - count_zeros;
 
     log::info!(
         "Bit string contains {} zeros and {} ones",
-        count_zero,
-        count_one
+        count_zeros,
+        count_ones
     );
 
-    let partial_sum = if count_zero >= count_one {
-        (count_zero - count_one) as f64
+    let partial_sum = if count_zeros >= count_ones {
+        (count_zeros - count_ones) as f64
     } else {
-        (count_one - count_zero) as f64
+        (count_ones - count_zeros) as f64
     };
 
     // now calculate observed value S_obs = |S_n| / sqrt(length)
@@ -51,7 +52,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function: erfc(observed / sqrt(2))
     let p_value = statrs::function::erf::erfc(observed / f64::sqrt(2.0));
-    log::info!("Frequency Monobit: p-value of bit string is {}", p_value);
+    log::info!("Frequency Monobit: p-value = {}", p_value);
 
     Ok(p_value)
 }

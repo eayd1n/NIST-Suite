@@ -28,7 +28,65 @@ use std::collections::BTreeMap;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("longest_run::perform_test()");
 
+    // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(bit_string, constants::MIN_LENGTH)?;
+
+    // evaluate bit string length
+    let config = evaluate_bit_string_length(length)?;
+
+    // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
+    // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
+    let mut counts: BTreeMap<i32, i32> = BTreeMap::new();
+
+    for i in (0..length).step_by(config.block_size_m) {
+        let end_index = (i + config.block_size_m).min(length);
+        let block = &bit_string[i..end_index];
+        let max_consecutive_ones = count_max_consecutive_ones(block);
+
+        *counts.entry(max_consecutive_ones).or_insert(0) += 1;
+    }
+
+    let vi_counts = calculate_vi_values(counts, config.thresholds);
+    log::trace!("Number of runs: {:?}", vi_counts);
+
+    // Now we need to compute chi_square value
+    let mut chi_square = 0.0;
+
+    // iterate over vi_values and pi_values at the sime time because both have same size
+    for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
+        log::trace!(
+            "Current vi_value: {}, current pi_value: {}",
+            *vi_value,
+            pi_value
+        );
+
+        let constant = (config.n_blocks as f64) * pi_value;
+        chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
+    }
+    log::debug!("Value of chi_square: {}", chi_square);
+
+    // finally compute p-value with the incomplete gamma function
+    let p_value = statrs::function::gamma::gamma_ur(
+        ((config.pi_values.len() as f64) - 1.0) * 0.5,
+        chi_square * 0.5,
+    );
+    log::debug!("Longest Run Within a Block: p-value = {}", p_value);
+
+    Ok(p_value)
+}
+
+/// Evaluate bit string length and select configuration parameters based on it.
+///
+/// # Arguments
+///
+/// length - Bit string length
+///
+/// # Return
+///
+/// Ok(config) - Config parameters based on bit string size
+/// Err(err) - Some error occured
+fn evaluate_bit_string_length(length: usize) -> Result<customtypes::LongestRunConfig<'static>> {
+    log::trace!("longest_run::evaluate_bit_string_length()");
 
     // it is crucial to have at least 128 bit passed for the test
     if length < constants::MIN_LENGTH {
@@ -67,48 +125,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     }
     log::debug!("{:?}", config);
 
-    // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
-    // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
-    let mut counts: BTreeMap<i32, i32> = BTreeMap::new();
-
-    for i in (0..length).step_by(config.block_size_m) {
-        let end_index = (i + config.block_size_m).min(length);
-        let block = &bit_string[i..end_index];
-        let max_consecutive_ones = count_max_consecutive_ones(block);
-
-        *counts.entry(max_consecutive_ones).or_insert(0) += 1;
-    }
-
-    let vi_counts = calculate_vi_values(counts, config.thresholds);
-    log::trace!("Number of runs: {:?}", vi_counts);
-
-    // Now we need to compute chi_square value
-    let mut chi_square = 0.0;
-
-    // iterate over vi_values and pi_values at the sime time because both have same size
-    for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
-        log::trace!(
-            "Current vi_value: {}, current pi_value: {}",
-            *vi_value,
-            pi_value
-        );
-
-        let constant = (config.n_blocks as f64) * pi_value;
-        chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
-    }
-    log::debug!("Value of chi_square: {}", chi_square);
-
-    // finally compute p-value with the incomplete gamma function
-    let p_value = statrs::function::gamma::gamma_ur(
-        ((config.pi_values.len() as f64) - 1.0) * 0.5,
-        chi_square * 0.5,
-    );
-    log::debug!(
-        "Longest Run Within a Block: p-value of bit string is {}",
-        p_value
-    );
-
-    Ok(p_value)
+    Ok(config)
 }
 
 /// Get the longest run of ones in a given block.

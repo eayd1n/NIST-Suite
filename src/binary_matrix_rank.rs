@@ -59,6 +59,7 @@ pub fn perform_test(
     let matrices = construct_matrices(bit_string, matrix_rows_m, matrix_columns_q);
 
     // determine the rank of each matrix and count their occurences
+    let n_matrices = length / (matrix_rows_m * matrix_columns_q);
     let mut rank_counts: HashMap<usize, usize> = HashMap::new();
 
     for matrix in &matrices {
@@ -70,6 +71,16 @@ pub fn perform_test(
             .entry(dynamic_matrix.rank(1e-10) as usize)
             .or_insert(0) += 1;
     }
+
+    // if number of really constructed matrices != computed number of matrices, throw an error
+    if n_matrices != matrices.len() {
+        anyhow::bail!(
+            "Number of matrices to be constructed ({}) != computed number of matrices ({})",
+            n_matrices,
+            matrices.len()
+        );
+    }
+
     log::debug!("Counts of ranks: {:?}", rank_counts);
 
     // determine the number of full ranks F_M, one below full ranks F_(M - 1)and the remaining
@@ -87,7 +98,7 @@ pub fn perform_test(
             0
         };
 
-    let remaining_ranks = matrices.len() - full_rank_m - full_rank_m_minus_one;
+    let remaining_ranks = n_matrices - full_rank_m - full_rank_m_minus_one;
     log::debug!(
         "Number of full rank matrices: {}, full rank - 1 matrices: {}, remaining matrices: {}",
         full_rank_m,
@@ -96,13 +107,14 @@ pub fn perform_test(
     );
 
     // Compute chi_square statistics
-    let n_matrices = length / (matrix_rows_m * matrix_columns_q);
-    let first_fraction = ((full_rank_m as f64) - constants::APPROXIMATIONS[0]).powf(2.0)
-        / constants::APPROXIMATIONS[0];
-    let second_fraction = ((full_rank_m_minus_one as f64) - constants::APPROXIMATIONS[1]).powf(2.0)
-        / constants::APPROXIMATIONS[1];
-    let third_fraction = ((remaining_ranks as f64) - constants::APPROXIMATIONS[2]).powf(2.0)
-        / constants::APPROXIMATIONS[2];
+    let first_fraction = compute_fraction(full_rank_m, n_matrices, constants::APPROXIMATIONS[0]);
+    let second_fraction = compute_fraction(
+        full_rank_m_minus_one,
+        n_matrices,
+        constants::APPROXIMATIONS[1],
+    );
+    let third_fraction =
+        compute_fraction(remaining_ranks, n_matrices, constants::APPROXIMATIONS[2]);
 
     let chi_square = first_fraction + second_fraction + third_fraction;
     log::debug!("Chi_square value: {}", chi_square);
@@ -123,6 +135,10 @@ fn construct_matrices(bit_string: &str, rows: usize, columns: usize) -> Vec<nalg
     // Divide the bitstring into substrings of length rows * columns
     let binding = bit_string.chars().collect::<Vec<_>>();
     let substrings = binding.chunks(total_elements);
+    log::debug!(
+        "Discarded {} bits from input",
+        bit_string.len() % total_elements
+    );
 
     // Iterate over the substrings to construct matrices
     for chunk in substrings {
@@ -142,10 +158,10 @@ fn construct_matrices(bit_string: &str, rows: usize, columns: usize) -> Vec<nalg
     matrices
 }
 
-fn compute_fraction(
-    full_rank_matrices: usize,
-    full_rank_minus_one: usize,
-    n_matrices: usize,
-    approximation: f64,
-) -> f64 {
+fn compute_fraction(rank: usize, n_matrices: usize, approximation: f64) -> f64 {
+    log::trace!("binary_matrix::rank::compute_fraction()");
+
+    let constant = approximation * (n_matrices as f64);
+    let fraction = ((rank as f64) - constant).powf(2.0) / constant;
+    fraction
 }

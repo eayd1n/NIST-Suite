@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod tests {
     use crate::binary_matrix_rank;
+    use crate::constants;
     use crate::logger;
+    use rug::{ops::Pow, Float, Integer};
     use serial_test::serial;
 
-    const LOGLEVEL: &str = "Trace";
+    const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "01011001001010101101"; // example from NIST Paper. p-value should be 0.741948
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
 
@@ -14,6 +16,35 @@ mod tests {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
         assert!(binary_matrix_rank::perform_test(BIT_STRING_1, 3, 3).unwrap() >= 0.01);
+
+        // Set precision to 100,000 binary digits
+        let mut e = Float::with_val(100_000, 0.0);
+        e.set_prec(100_000);
+
+        // Calculate e with desired precision
+        e = Float::with_val(100_000, 1).exp();
+
+        // Extract the fractional part by subtracting the integer part
+        let fractional_part = e.clone() - e.floor();
+
+        // Multiply the fractional part by 2^100,000 to extract the binary digits
+        let multiplied: Float = fractional_part * Float::with_val(1, 2).pow(100_000);
+
+        // Convert the multiplied value to an integer
+        let multiplied_integer: Integer = multiplied.to_integer().unwrap();
+
+        // Convert the integer to its binary representation as a string
+        let binary_digits = multiplied_integer.to_string_radix(2);
+
+        assert!(
+            binary_matrix_rank::perform_test(
+                &binary_digits,
+                constants::MATRIX_ROWS_M,
+                constants::MATRIX_COLUMNS_Q
+            )
+            .unwrap()
+                != 0.01
+        );
     }
 
     #[test]
