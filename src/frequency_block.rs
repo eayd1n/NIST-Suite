@@ -112,8 +112,11 @@ fn evaluate_block_size(length: usize, block_size_m: usize) -> Result<usize> {
         );
     }
 
-    log::debug!("Block size M: {}", block_size_m);
-    log::info!("Number of blocks N to proceed: {}", n_blocks);
+    log::info!(
+        "Block size M: {}, number of blocks N to proceed: {}",
+        block_size_m,
+        n_blocks
+    );
 
     Ok(n_blocks)
 }

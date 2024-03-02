@@ -55,7 +55,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
 
-    // iterate over vi_values and pi_values at the sime time because both have same size
+    // iterate over vi_values and pi_values at the same time because both have same size
     for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
         log::trace!(
             "Current vi_value: {}, current pi_value: {}",
@@ -159,7 +159,7 @@ fn count_max_consecutive_ones(block: &str) -> i32 {
     max_count
 }
 
-/// Calculcate the v_i values. Those are basically counters what longest run number occured how
+/// Calculcate the v_i values. Those are basically counters which longest run number occured how
 /// often.
 ///
 /// # Arguments
