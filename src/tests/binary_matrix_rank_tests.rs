@@ -3,12 +3,14 @@ mod tests {
     use crate::binary_matrix_rank;
     use crate::constants;
     use crate::logger;
+    use crate::utils;
     use rug::{ops::Pow, Float, Integer};
     use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "01011001001010101101"; // example from NIST Paper. p-value should be 0.741948
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
+    const NUMBER_OF_BYTES: usize = 12500;
 
     #[test]
     #[serial]
@@ -44,6 +46,19 @@ mod tests {
             )
             .unwrap()
                 != 0.01
+        );
+
+        // test 100,000 newly generated random bits
+        let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
+        let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
+        assert!(
+            binary_matrix_rank::perform_test(
+                &bit_string,
+                constants::MATRIX_ROWS_M,
+                constants::MATRIX_COLUMNS_Q
+            )
+            .unwrap()
+                >= 0.01
         );
     }
 

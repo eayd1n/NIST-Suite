@@ -14,7 +14,7 @@ use std::collections::HashMap;
 ///
 /// # Arguments
 ///
-/// bit_string - The bit string to be tested for randomness
+/// bit_string - The bit string to be tested for randomnesshas been running for over 60 seconds
 /// matrix_rows_m - The numbers of rows all matrices need to have
 /// matrix_columns_q - The number of columns all matrices need to have
 ///
@@ -29,10 +29,11 @@ pub fn perform_test(
 ) -> Result<f64> {
     log::trace!("binary_matrix_rank::perform_test()");
 
+    // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE_MATRIX_TEST)?;
 
     // the test is optimized for M = Q = 32 and a bit size of n = 32 * 32 * 38. If the values are
-    // not matching, log a warning because approximations do not fit anymore
+    // not matching, log a warning because approximations may not fit anymore
     if matrix_rows_m != constants::MATRIX_ROWS_M {
         log::warn!(
             "Recommended size for rows: {}, passed rows: {}",
@@ -48,13 +49,6 @@ pub fn perform_test(
         );
     }
 
-    log::debug!(
-        "Rows M = {}, Columns Q = {}, Length of bit string = {}",
-        matrix_rows_m,
-        matrix_columns_q,
-        length
-    );
-
     // create matrices from the given bit string by iterating over chunks of size M * Q
     let matrices = construct_matrices(bit_string, matrix_rows_m, matrix_columns_q);
 
@@ -62,27 +56,14 @@ pub fn perform_test(
     let n_matrices = length / (matrix_rows_m * matrix_columns_q);
     let mut rank_counts: HashMap<usize, usize> = HashMap::new();
 
-    for matrix in &matrices {
-        // Convert the matrix to a dynamically-sized matrix before calculating the rank
-        let dynamic_matrix = nalgebra::DMatrix::from_fn(matrix.nrows(), matrix.ncols(), |i, j| {
-            matrix[(i, j)] as f64
-        });
-        *rank_counts.entry(dynamic_matrix.rank(1e-10)).or_insert(0) += 1;
-    }
-
-    // if number of really constructed matrices != computed number of matrices, throw an error
-    if n_matrices != matrices.len() {
-        anyhow::bail!(
-            "Number of matrices to be constructed ({}) != computed number of matrices ({})",
-            n_matrices,
-            matrices.len()
-        );
+    for mut matrix in matrices.into_iter() {
+        *rank_counts.entry(compute_rank(&mut matrix)).or_insert(0) += 1;
     }
 
     log::debug!("Counts of ranks: {:?}", rank_counts);
 
-    // determine the number of full ranks F_M, one below full ranks F_(M - 1)and the remaining
-    // ranks (N - F_M - F_(M - 1)
+    // determine the number of full ranks F_M, full ranks F_(M - 1) and the remaining
+    // ranks (N - F_M - F_(M - 1))
     let full_rank_m = if let Some(&full_rank) = rank_counts.get(&matrix_rows_m) {
         full_rank
     } else {
@@ -97,6 +78,7 @@ pub fn perform_test(
         };
 
     let remaining_ranks = n_matrices - full_rank_m - full_rank_m_minus_one;
+
     log::debug!(
         "Number of full rank matrices: {}, full rank - 1 matrices: {}, remaining matrices: {}",
         full_rank_m,
@@ -104,7 +86,7 @@ pub fn perform_test(
         remaining_ranks
     );
 
-    // Compute chi_square statistics
+    // Compute chi_square statistics by calculating the three fractions (one fraction per rank)
     let first_fraction = compute_fraction(full_rank_m, n_matrices, constants::APPROXIMATIONS[0]);
     let second_fraction = compute_fraction(
         full_rank_m_minus_one,
@@ -117,14 +99,29 @@ pub fn perform_test(
     let chi_square = first_fraction + second_fraction + third_fraction;
     log::debug!("Chi_square value: {}", chi_square);
 
-    // finally, compute p-value with exp(-chi_square * 0.5)
+    // finally, compute p-value with exp(-chi_square / 2.0)
     let p_value = (-chi_square * 0.5).exp();
-    log::info!("Binary Matrix Rank: p-value of bit string is {}", p_value);
+    log::info!("Binary Matrix Rank: p-value = {}", p_value);
 
     Ok(p_value)
 }
 
-fn construct_matrices(bit_string: &str, rows: usize, columns: usize) -> Vec<nalgebra::DMatrix<u8>> {
+/// Construct matrices from the given bit string.
+///
+/// # Arguments
+///
+/// bit_string - The bit string the matrices have to be constructed from
+/// rows - The number of rows the matrices will have
+/// columns - The number of columns the matrices will have
+///
+/// # Return
+///
+/// matrices - All of the constructed matrices
+fn construct_matrices(
+    bit_string: &str,
+    rows: usize,
+    columns: usize,
+) -> Vec<nalgebra::DMatrix<rug::Integer>> {
     log::trace!("binary_matrix_rank::construct_matrices()");
 
     let total_elements = rows * columns;
@@ -141,11 +138,11 @@ fn construct_matrices(bit_string: &str, rows: usize, columns: usize) -> Vec<nalg
     // Iterate over the substrings to construct matrices
     for chunk in substrings {
         if chunk.len() == total_elements {
-            let mut matrix = nalgebra::DMatrix::from_element(rows, columns, 0);
+            let mut matrix = nalgebra::DMatrix::from_element(rows, columns, rug::Integer::new());
             for (index, &bit) in chunk.iter().enumerate() {
                 let row = index / columns;
                 let col = index % columns;
-                matrix[(row, col)] = bit.to_digit(2).unwrap() as u8;
+                matrix[(row, col)] = rug::Integer::from(bit.to_digit(2).unwrap());
             }
             log::trace!("Constructed matrix: {}", &matrix);
             matrices.push(matrix);
@@ -156,9 +153,74 @@ fn construct_matrices(bit_string: &str, rows: usize, columns: usize) -> Vec<nalg
     matrices
 }
 
+/// Compute the rank of the given matrix.
+///
+/// # Arguments
+///
+/// matrix - The matrix the rank has to be determined from
+///
+/// # Return
+///
+/// rank - The rank of the given matrix
+fn compute_rank(matrix: &mut nalgebra::DMatrix<rug::Integer>) -> usize {
+    log::trace!("binary_matrix_rank::compute_rank()");
+
+    let (mut row, mut col) = (0, 0);
+    let mut rank = 0;
+
+    while row < matrix.nrows() && col < matrix.ncols() {
+        // Find the pivot for this column
+        let mut max_row = row;
+        for i in row + 1..matrix.nrows() {
+            let abs_value_i = matrix[(i, col)].clone().abs();
+            let abs_value_max_row = matrix[(max_row, col)].clone().abs();
+            if abs_value_i > abs_value_max_row {
+                max_row = i;
+            }
+        }
+
+        if matrix[(max_row, col)].is_zero() {
+            // All elements in this column are zero
+            col += 1;
+        } else {
+            // Swap the rows to move the pivot to the current row
+            matrix.swap_rows(row, max_row);
+
+            // Perform row operations to eliminate elements below the pivot
+            for i in row + 1..matrix.nrows() {
+                let factor = matrix[(i, col)].clone() / matrix[(row, col)].clone();
+                for j in col..matrix.ncols() {
+                    let temp = factor.clone() * matrix[(row, j)].clone();
+                    matrix[(i, j)] -= temp;
+                }
+            }
+
+            row += 1;
+            col += 1;
+            rank += 1;
+        }
+    }
+
+    rank
+}
+
+/// Compute the fractions needed to determine the chi_square value.
+///
+/// # Arguments
+///
+/// rank - The rank of a matrix
+/// n_matrices - The overall number of matrices
+/// approximation - The pre-calculated approximation for the fraction
+///
+/// # Return
+///
+/// fraction - The calculated fraction
 fn compute_fraction(rank: usize, n_matrices: usize, approximation: f64) -> f64 {
     log::trace!("binary_matrix::rank::compute_fraction()");
 
     let constant = approximation * (n_matrices as f64);
-    ((rank as f64) - constant).powf(2.0) / constant
+    let fraction = ((rank as f64) - constant).powf(2.0) / constant;
+
+    log::debug!("Computed fraction: {}", fraction);
+    fraction
 }
