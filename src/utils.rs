@@ -1,7 +1,6 @@
 //! This module contains useful functions to support the statistical tests from the NIST suite.
 
 use anyhow::{Context, Result};
-use hex;
 use openssl::rand::rand_bytes;
 use std::fs::File;
 use std::io::{Read, Write};

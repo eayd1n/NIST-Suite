@@ -67,9 +67,7 @@ pub fn perform_test(
         let dynamic_matrix = nalgebra::DMatrix::from_fn(matrix.nrows(), matrix.ncols(), |i, j| {
             matrix[(i, j)] as f64
         });
-        *rank_counts
-            .entry(dynamic_matrix.rank(1e-10) as usize)
-            .or_insert(0) += 1;
+        *rank_counts.entry(dynamic_matrix.rank(1e-10)).or_insert(0) += 1;
     }
 
     // if number of really constructed matrices != computed number of matrices, throw an error
@@ -162,6 +160,5 @@ fn compute_fraction(rank: usize, n_matrices: usize, approximation: f64) -> f64 {
     log::trace!("binary_matrix::rank::compute_fraction()");
 
     let constant = approximation * (n_matrices as f64);
-    let fraction = ((rank as f64) - constant).powf(2.0) / constant;
-    fraction
+    ((rank as f64) - constant).powf(2.0) / constant
 }

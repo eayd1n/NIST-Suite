@@ -29,7 +29,7 @@ mod tests {
         assert!(frequency_monobit::perform_test(BIT_STRING_6).unwrap() >= 0.01);
         assert!(frequency_monobit::perform_test(BIT_STRING_7).unwrap() == 1.00);
 
-        // test 1,000,000 newly generated random bits exactly 100 times
+        // test 1,000,000 newly generated random bits
         let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
         let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
         assert!(frequency_monobit::perform_test(&bit_string).unwrap() >= 0.01);

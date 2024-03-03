@@ -104,14 +104,14 @@ fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig
     // block), N (number of blocks), thresholds (min, max) and the pre-computed pi_values
     let config: customtypes::LongestRunConfig;
 
-    if length >= constants::MIN_LENGTH && length < constants::MID_LENGTH {
+    if (constants::MIN_LENGTH..constants::MID_LENGTH).contains(&length) {
         config = customtypes::LongestRunConfig::create(
             constants::MIN_SIZE_M,
             constants::MIN_SIZE_N,
             constants::MIN_THRESHOLDS,
             &constants::MIN_PI_VALUES,
         );
-    } else if length >= constants::MID_LENGTH && length < constants::MAX_LENGTH {
+    } else if (constants::MID_LENGTH..constants::MAX_LENGTH).contains(&length) {
         config = customtypes::LongestRunConfig::create(
             constants::MID_SIZE_M,
             constants::MID_SIZE_N,

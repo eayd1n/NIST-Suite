@@ -1,5 +1,6 @@
 //! This module contains custom types like enums and structs and their respective implementations.
 
+/// Struct for "Longest Run of Ones in a Block" test
 #[derive(Debug)]
 pub struct LongestRunConfig<'a> {
     pub block_size_m: usize,
@@ -22,4 +23,11 @@ impl<'a> LongestRunConfig<'a> {
             pi_values,
         }
     }
+}
+
+/// Enum for "Cumulative Sums (Cusum)" test
+#[derive(Debug, PartialEq)]
+pub enum Mode {
+    Forward,
+    Backward,
 }

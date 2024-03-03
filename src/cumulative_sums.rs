@@ -10,16 +10,11 @@
 //! zero. For certain types of non-random sequences, the excursions of this random walk from zero will be
 //! large."
 
-use anyhow::Result;
+use crate::constants;
+use crate::customtypes;
+use crate::utils;
+use anyhow::{Context, Result};
 use statrs::distribution::ContinuousCDF;
-
-const RECOMMENDED_SIZE: usize = 100;
-
-#[derive(Debug, PartialEq)]
-pub enum Mode {
-    Forward,
-    Backward,
-}
 
 /// Perform the Cumulative Sums Test.
 ///
@@ -32,58 +27,50 @@ pub enum Mode {
 ///
 /// Ok(p-value) - The p-value which indicates whether randomness is given or not
 /// Err(err) - Some error occured
-pub fn perform_test(bit_string: &str, mode: Mode) -> Result<f64> {
+pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
     log::trace!("cumulative_sums::perform_test()");
 
-    // check validity of passed bit string
-    if bit_string.is_empty() || bit_string.chars().any(|c| c != '0' && c != '1') {
-        anyhow::bail!("Bit string either is empty or contains invalid character(s)");
-    }
-
-    log::debug!("Chosen mode: {:?}", mode);
-
-    let length = bit_string.len();
-    log::debug!("Bit string has the length {}", length);
-
-    // Recommended size is at least 100 bits. It is not an error but log a warning anyways
-    if length < RECOMMENDED_SIZE {
-        log::warn!(
-            "Recommended size is at least 100 bits. Consider imprecision when calculating p-value"
-        );
-    }
+    // check if bit string contains invalid characters
+    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+        .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // Create cumulative sums depending on chosen mode
-    let new_bit_string = if mode == Mode::Forward {
+    // In "Forward" mode, the bit string remains unchanged.
+    // In "Backward" mode, just revert the bit string
+    let new_bit_string = if mode == customtypes::Mode::Forward {
         bit_string.to_string()
     } else {
         bit_string.chars().rev().collect::<String>()
     };
 
-    // now compute the particular sums and determine the maximum sum
-    let mut max_sum_z: i64 = 0;
-    let mut current_sum: i64 = 0;
+    // now compute the particular sums and determine the maximum sum. Instead of adding +1 for a
+    // '1' and '1 for a '0', just determine the number of ones and zeros and calculate the
+    // difference
+    let mut max_sum_z = 0;
 
-    for (index, _) in new_bit_string.chars().enumerate() {
-        for j in 0..(index + 1) {
-            let window_value = if new_bit_string.chars().nth(j).unwrap() == '1' {
-                1
-            } else {
-                -1
-            };
-            current_sum += window_value;
-            if current_sum.abs() > max_sum_z {
-                max_sum_z = current_sum.abs();
-            }
+    for i in 0..length {
+        let num_bits = i + 1;
+        let block = &new_bit_string[0..num_bits];
+
+        let count_zeros = block.chars().filter(|&c| c == '0').count();
+        let count_ones = block.len() - count_zeros;
+
+        let current_sum = if count_zeros > count_ones {
+            count_zeros - count_ones
+        } else {
+            count_ones - count_zeros
+        };
+
+        if current_sum > max_sum_z {
+            max_sum_z = current_sum;
         }
-        // reset current sum
-        current_sum = 0;
     }
     log::debug!(
         "Determined maximum value z of cumulative sums: {}",
         max_sum_z
     );
 
-    // compute lower and upper limits before generating p-value
+    // compute lower and upper limits for the sums before generating p-value
     let upper_limit = (((length as f64) / (max_sum_z as f64) - 1.0) * 0.25) as i64;
     let lower_limit_1 = ((-1.0 * (length as f64) / (max_sum_z as f64) + 1.0) * 0.25) as i64;
     let lower_limit_2 = ((-1.0 * (length as f64) / (max_sum_z as f64) - 3.0) * 0.25) as i64;
@@ -96,29 +83,33 @@ pub fn perform_test(bit_string: &str, mode: Mode) -> Result<f64> {
 
     // finally, compute p-value with the standard normal cumulative probability distribution
     // function
-    let mut sum_result = 0.0;
+    let mut sum_1 = 0.0;
+    let mut sum_2 = 0.0;
     let normal = statrs::distribution::Normal::new(0.0, 1.0).unwrap();
     let denominator = (length as f64).sqrt();
 
+    // we do have two sums to generate to get the p-value in the end
     for k in lower_limit_1..=upper_limit {
         let numerator_1 = (4.0 * (k as f64) + 1.0) * (max_sum_z as f64);
         let numerator_2 = (4.0 * (k as f64) - 1.0) * (max_sum_z as f64);
 
-        sum_result += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
+        sum_1 += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
+        log::trace!("Value of sum in first loop for k = {}: {}", k, sum_1);
     }
 
     for k in lower_limit_2..=upper_limit {
         let numerator_1 = (4.0 * (k as f64) + 3.0) * (max_sum_z as f64);
         let numerator_2 = (4.0 * (k as f64) + 1.0) * (max_sum_z as f64);
 
-        sum_result += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
+        sum_2 += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
+        log::trace!("Value of sum in second loop for k = {}: {}", k, sum_2);
     }
 
-    let p_value = 1.0 - sum_result;
+    let p_value = 1.0 - sum_1 + sum_2;
     log::info!(
-        "Cumulative Sums (Cusum): p-value of bit string in '{:?}' mode is {}",
-        mode,
-        p_value
+        "Cumulative Sums (Cusum): p-value = {} ('{:?}' Mode)",
+        p_value,
+        mode
     );
 
     Ok(p_value)
