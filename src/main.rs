@@ -2,6 +2,7 @@ mod binary_matrix_rank;
 mod constants;
 mod cumulative_sums;
 mod customtypes;
+mod dft_spectral;
 mod frequency_block;
 mod frequency_monobit;
 mod logger;

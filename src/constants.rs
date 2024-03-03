@@ -3,6 +3,9 @@
 /// Usual recommended size for several tests
 pub const RECOMMENDED_SIZE: usize = 100;
 
+/// Recommended size for "Discrete Fourier Transform (Spectral" Test
+pub const RECOMMENDED_SIZE_DFT: usize = 1000;
+
 /// Constants for the "Longest Run of Ones in a Block" test
 pub const MIN_LENGTH: usize = 128;
 pub const MID_LENGTH: usize = 6272;

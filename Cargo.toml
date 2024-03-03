@@ -13,6 +13,7 @@ log = "0.4.20"
 nalgebra = "0.32.4"
 openssl = "0.10.64"
 rug = "1.24.0"
+rustfft = "6.2.0"
 statrs = "0.16.0"
 
 [dev-dependencies]

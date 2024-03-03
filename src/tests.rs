@@ -17,4 +17,7 @@ mod longest_run_tests;
 mod binary_matrix_rank_tests;
 
 #[cfg(test)]
+mod dft_spectral_tests;
+
+#[cfg(test)]
 mod cumulative_sums_tests;
