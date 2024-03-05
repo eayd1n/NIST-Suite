@@ -41,7 +41,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     let count_ones = length - count_zeros;
 
     log::info!(
-        "Bit string contains {} zeros and {} ones",
+        "{}: Bit string contains {} zeros and {} ones",
+        TEST_NAME,
         count_zeros,
         count_ones
     );
@@ -54,7 +55,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // now calculate observed value S_obs = |S_n| / sqrt(length)
     let observed = partial_sum / (length as f64).sqrt();
-    log::debug!("Observed value S_obs: {}", observed);
+    log::debug!("{}: Observed value S_obs: {}", TEST_NAME, observed);
 
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function: erfc(observed / sqrt(2))

@@ -41,7 +41,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     let pre_test_proportion = (count_ones as f64) / (length as f64);
     log::debug!(
-        "Given bit string contains {} ones and {} zeros, pre-test proportion: {}",
+        "{}: Given bit string contains {} ones and {} zeros, pre-test proportion: {}",
+        TEST_NAME,
         count_ones,
         length - count_ones,
         pre_test_proportion
@@ -57,13 +58,18 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
             v_n_observed += 1;
         }
     }
-    log::debug!("v_n_observed value: {}", v_n_observed);
+    log::debug!("{}: v_n_observed value: {}", TEST_NAME, v_n_observed);
 
     // finally, compute p-value with complementary error function
     let constant = pre_test_proportion * (1.0 - pre_test_proportion);
     let numerator = ((v_n_observed as f64) - 2.0 * (length as f64) * constant).abs();
     let denominator = 2.0 * (2.0 * (length as f64)).sqrt() * constant;
-    log::debug!("Numerator: {}, Denominator: {}", numerator, denominator);
+    log::debug!(
+        "{}: Numerator: {}, Denominator: {}",
+        TEST_NAME,
+        numerator,
+        denominator
+    );
 
     let p_value = statrs::function::erf::erfc(numerator / denominator);
     log::info!("{}: p-value = {}", TEST_NAME, p_value);

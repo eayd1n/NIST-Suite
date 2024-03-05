@@ -41,7 +41,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // calculate height threshold T = sqrt(log(1/0.05) * length)
     let arg: f64 = 1.0 / 0.05;
     let height_threshold = (arg.log10() * (length as f64)).sqrt();
-    log::debug!("Height Threshold T = {}", height_threshold);
+    log::debug!("{}: Height Threshold T = {}", TEST_NAME, height_threshold);
 
     // calculate expected theoretical (95%) number of peaks N_0 = (0.95 * length) / 2.0
     // also calculate actual observed number N_1 of peaks in M with peaks < T
@@ -55,11 +55,15 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
             n_1 += 1.0;
         }
     }
-    log::debug!("N_0 = {}, N_1 = {}", n_0, n_1);
+    log::debug!("{}: N_0 = {}, N_1 = {}", TEST_NAME, n_0, n_1);
 
     // compute normalized difference d = (N_1 - N_0) / (sqrt((length * 0.95 * 0.05) / 4.0))
     let normalized_diff = (n_1 - n_0) / ((length as f64) * 0.95 * 0.05 * 0.25).sqrt();
-    log::debug!("Peak difference d = {}", normalized_diff);
+    log::debug!(
+        "{}: Normalized difference d = {}",
+        TEST_NAME,
+        normalized_diff
+    );
 
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function: erfc(|normalized_diff| / sqrt(2))
@@ -92,7 +96,7 @@ fn apply_dft(bit_string: &str, signal_len: usize) -> Vec<Complex<f64>> {
         .chars()
         .map(|c| if c == '1' { 1.0 } else { -1.0 })
         .collect();
-    log::trace!("Signal: {:?}", signal);
+    log::trace!("{}: Signal: {:?}", TEST_NAME, signal);
 
     // create a planner for FFT with the given signal length
     let mut planner = FftPlanner::<f64>::new();
@@ -105,7 +109,7 @@ fn apply_dft(bit_string: &str, signal_len: usize) -> Vec<Complex<f64>> {
     fft.process(&mut spectrum);
 
     for (i, value) in spectrum.iter().enumerate() {
-        log::trace!("Frequency Bin {}: {:?}", i, value);
+        log::trace!("{}: Frequency Bin {}: {:?}", TEST_NAME, i, value);
     }
 
     spectrum

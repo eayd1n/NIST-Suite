@@ -38,8 +38,12 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // evaluate bit string length and determine longest run configuration
-    let config = get_longest_run_config(length)
-        .with_context(|| "Failed to retrieve longest run configuration")?;
+    let config = get_longest_run_config(length).with_context(|| {
+        format!(
+            "{}: Failed to retrieve longest run configuration",
+            TEST_NAME
+        )
+    })?;
 
     // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
     // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
@@ -53,9 +57,9 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
-    log::debug!("Number of runs before merge: {:?}", counts);
+    log::debug!("{}: Number of runs before merge: {:?}", TEST_NAME, counts);
     let vi_counts = calculate_vi_values(counts, config.thresholds);
-    log::debug!("Number of runs after merge: {:?}", vi_counts);
+    log::debug!("{}: Number of runs after merge: {:?}", TEST_NAME, vi_counts);
 
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
@@ -63,7 +67,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // iterate over vi_values and pi_values at the same time because both have same size
     for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
         log::trace!(
-            "Current vi_value: {}, current pi_value: {}",
+            "{}: Current vi_value: {}, current pi_value: {}",
+            TEST_NAME,
             *vi_value,
             pi_value
         );
@@ -71,7 +76,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         let constant = (config.n_blocks as f64) * pi_value;
         chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
     }
-    log::debug!("Value of chi_square: {}", chi_square);
+    log::debug!("{}: Value of chi_square: {}", TEST_NAME, chi_square);
 
     // finally compute p-value with the incomplete gamma function: igamc(K/2, chi_square/2)
     let p_value = statrs::function::gamma::gamma_ur(
@@ -104,7 +109,8 @@ fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig
     // it is crucial to have at least 128 bit passed for the test
     if length < constants::MIN_LENGTH {
         anyhow::bail!(
-            "Bit string needs at least {} bits! Actual length: {}",
+            "{}: Bit string needs at least {} bits! Actual length: {}",
+            TEST_NAME,
             constants::MIN_LENGTH,
             length
         );
@@ -136,7 +142,7 @@ fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig
             &constants::MAX_PI_VALUES,
         );
     }
-    log::debug!("{:?}", config);
+    log::debug!("{}: Configured following values: {:?}", TEST_NAME, config);
 
     Ok(config)
 }
@@ -165,7 +171,12 @@ fn count_max_consecutive_ones(block: &str) -> i32 {
         }
     }
 
-    log::trace!("Block '{}', longest run of ones: {}", block, max_count);
+    log::trace!(
+        "{}: Block '{}', longest run of ones: {}",
+        TEST_NAME,
+        block,
+        max_count
+    );
     max_count
 }
 

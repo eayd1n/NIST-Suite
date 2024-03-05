@@ -37,7 +37,10 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
 
     // check block size M for validity and get number of blocks N
     let n_blocks = evaluate_block_size(length, block_size_m).with_context(|| {
-        "Either block size M or number of blocks N does not fit to defined requirements"
+        format!(
+            "{}: Either block size M or number of blocks N does not fit to defined requirements",
+            TEST_NAME
+        )
     })?;
 
     // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size_m
@@ -48,7 +51,8 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
         let block = &bit_string[index..(index + block_size_m)];
         let count_ones = block.chars().filter(|&c| c == '1').count();
         log::trace!(
-            "Block {}/{}: '{}' consists of {} ones",
+            "{}: Block {}/{}: '{}' consists of {} ones",
+            TEST_NAME,
             block_num + 1,
             n_blocks,
             block,
@@ -67,10 +71,14 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
         log::trace!("pi_{}: {}", index + 1, pi);
         observed += (pi - 0.5).powf(2.0);
     }
-    log::debug!("Calculated observed value {}", observed);
+    log::debug!("{}: Calculated observed value {}", TEST_NAME, observed);
 
     let chi_square = 4.0 * (block_size_m as f64) * observed;
-    log::debug!("Chi square for given bit string: {}", chi_square);
+    log::debug!(
+        "{}: Chi square for given bit string: {}",
+        TEST_NAME,
+        chi_square
+    );
 
     // finally, compute the p-value using the incomplete gamma function: igamc(N/2, chi_square/2)
     // Note: If we do have a perfect distribution (M/2 ones in each block), chi_square is zero
@@ -107,7 +115,8 @@ fn evaluate_block_size(length: usize, block_size_m: usize) -> Result<usize> {
     // M should be less than bit string length but greater than (length / 100)
     if block_size_m >= length || block_size_m <= (length / constants::RECOMMENDED_SIZE) {
         anyhow::bail!(
-            "Choose block size as of {} < M < {}",
+            "{}: Choose block size as of {} < M < {}",
+            TEST_NAME,
             length / constants::RECOMMENDED_SIZE,
             length
         );
@@ -117,14 +126,16 @@ fn evaluate_block_size(length: usize, block_size_m: usize) -> Result<usize> {
     let n_blocks = length / block_size_m;
     if n_blocks >= constants::RECOMMENDED_SIZE {
         anyhow::bail!(
-            "Number of blocks exceed {}: {}. Please choose a larger M",
+            "{}: Number of blocks exceed {}: {}. Please choose a larger M",
+            TEST_NAME,
             constants::RECOMMENDED_SIZE,
             n_blocks
         );
     }
 
     log::info!(
-        "Block size M: {}, number of blocks N to proceed: {}",
+        "{}: Block size M: {}, number of blocks N to proceed: {}",
+        TEST_NAME,
         block_size_m,
         n_blocks
     );

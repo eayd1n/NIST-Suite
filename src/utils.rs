@@ -52,11 +52,14 @@ pub fn evaluate_bit_string(
 
     // check validity of passed bit string
     if bit_string.is_empty() || bit_string.chars().any(|c| c != '0' && c != '1') {
-        anyhow::bail!("Bit string is either empty or contains invalid character(s)");
+        anyhow::bail!(
+            "{}: Bit string is either empty or contains invalid character(s)",
+            test_name
+        );
     }
 
     let length = bit_string.len();
-    log::debug!("Bit string has the length {}", length);
+    log::debug!("{}: Bit string has the length {}", test_name, length);
 
     // If bit string has not the recommended size, it is not an error but log a warning anyways
     if length < recommended_size {

@@ -46,14 +46,16 @@ pub fn perform_test(
     // not matching, log a warning because approximations may not fit anymore
     if matrix_rows_m != constants::MATRIX_ROWS_M {
         log::warn!(
-            "Recommended size for rows: {}, passed rows: {}",
+            "{}: Recommended size for rows: {}, passed rows: {}",
+            TEST_NAME,
             constants::MATRIX_ROWS_M,
             matrix_rows_m
         );
     }
     if matrix_columns_q != constants::MATRIX_COLUMNS_Q {
         log::warn!(
-            "Recommended size for columns: {}, passed columns: {}",
+            "{}: Recommended size for columns: {}, passed columns: {}",
+            TEST_NAME,
             constants::MATRIX_COLUMNS_Q,
             matrix_columns_q
         );
@@ -70,7 +72,7 @@ pub fn perform_test(
         *rank_counts.entry(compute_rank(&mut matrix)).or_insert(0) += 1;
     }
 
-    log::debug!("Counts of ranks: {:?}", rank_counts);
+    log::debug!("{}: Counts of ranks: {:?}", TEST_NAME, rank_counts);
 
     // determine the number of full ranks F_M, full ranks F_(M - 1) and the remaining
     // ranks (N - F_M - F_(M - 1))
@@ -90,7 +92,8 @@ pub fn perform_test(
     let remaining_ranks = n_matrices - full_rank_m - full_rank_m_minus_one;
 
     log::debug!(
-        "Number of full rank matrices: {}, full rank - 1 matrices: {}, remaining matrices: {}",
+        "{}: Number of full rank matrices: {}, full rank - 1 matrices: {}, remaining matrices: {}",
+        TEST_NAME,
         full_rank_m,
         full_rank_m_minus_one,
         remaining_ranks
@@ -107,7 +110,7 @@ pub fn perform_test(
         compute_fraction(remaining_ranks, n_matrices, constants::APPROXIMATIONS[2]);
 
     let chi_square = first_fraction + second_fraction + third_fraction;
-    log::debug!("Chi_square value: {}", chi_square);
+    log::debug!("{}: Chi_square value: {}", TEST_NAME, chi_square);
 
     // finally, compute p-value with exp(-chi_square / 2.0)
     let p_value = (-chi_square * 0.5).exp();
@@ -146,7 +149,8 @@ fn construct_matrices(
     let binding = bit_string.chars().collect::<Vec<_>>();
     let substrings = binding.chunks(total_elements);
     log::debug!(
-        "Discarded {} bits from input",
+        "{}: Discarded {} bits from input",
+        TEST_NAME,
         bit_string.len() % total_elements
     );
 
@@ -159,12 +163,16 @@ fn construct_matrices(
                 let col = index % columns;
                 matrix[(row, col)] = rug::Integer::from(bit.to_digit(2).unwrap());
             }
-            log::trace!("Constructed matrix: {}", &matrix);
+            log::trace!("{}: Constructed matrix: {}", TEST_NAME, &matrix);
             matrices.push(matrix);
         }
     }
 
-    log::debug!("Number of constructed matrices: {}", &matrices.len());
+    log::debug!(
+        "{}: Number of constructed matrices: {}",
+        TEST_NAME,
+        &matrices.len()
+    );
     matrices
 }
 
@@ -236,6 +244,6 @@ fn compute_fraction(rank: usize, n_matrices: usize, approximation: f64) -> f64 {
     let constant = approximation * (n_matrices as f64);
     let fraction = ((rank as f64) - constant).powf(2.0) / constant;
 
-    log::debug!("Computed fraction: {}", fraction);
+    log::debug!("{}: Computed fraction: {}", TEST_NAME, fraction);
     fraction
 }

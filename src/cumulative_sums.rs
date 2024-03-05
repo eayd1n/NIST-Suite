@@ -71,7 +71,8 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
         }
     }
     log::debug!(
-        "Determined maximum value z of cumulative sums: {}",
+        "{}: Determined maximum value z of cumulative sums: {}",
+        TEST_NAME,
         max_sum_z
     );
 
@@ -80,7 +81,8 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
     let lower_limit_1 = ((-1.0 * (length as f64) / (max_sum_z as f64) + 1.0) * 0.25) as i64;
     let lower_limit_2 = ((-1.0 * (length as f64) / (max_sum_z as f64) - 3.0) * 0.25) as i64;
     log::debug!(
-        "Upper limit: {}, Lower Limit 1: {}, Lower Limit 2: {}",
+        "{}: Upper limit: {}, Lower Limit 1: {}, Lower Limit 2: {}",
+        TEST_NAME,
         upper_limit,
         lower_limit_1,
         lower_limit_2
@@ -99,7 +101,12 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
         let numerator_2 = (4.0 * (k as f64) - 1.0) * (max_sum_z as f64);
 
         sum_1 += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
-        log::trace!("Value of sum in first loop for k = {}: {}", k, sum_1);
+        log::trace!(
+            "{}: Value of sum in first loop for k = {}: {}",
+            TEST_NAME,
+            k,
+            sum_1
+        );
     }
 
     for k in lower_limit_2..=upper_limit {
@@ -107,7 +114,12 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
         let numerator_2 = (4.0 * (k as f64) + 1.0) * (max_sum_z as f64);
 
         sum_2 += normal.cdf(numerator_1 / denominator) - normal.cdf(numerator_2 / denominator);
-        log::trace!("Value of sum in second loop for k = {}: {}", k, sum_2);
+        log::trace!(
+            "{}: Value of sum in second loop for k = {}: {}",
+            TEST_NAME,
+            k,
+            sum_2
+        );
     }
 
     let p_value = 1.0 - sum_1 + sum_2;
