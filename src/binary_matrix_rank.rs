@@ -6,9 +6,12 @@
 //! to check for linear dependence among fixed length substrings of the original sequence."
 
 use crate::constants;
+use crate::customtypes;
 use crate::utils;
 use anyhow::Result;
 use std::collections::HashMap;
+
+const TEST_NAME: customtypes::Test = customtypes::Test::BinaryMatrixRank;
 
 /// Perform the Binary Matrix Rank Test by determining the p-value.
 ///
@@ -29,8 +32,15 @@ pub fn perform_test(
 ) -> Result<f64> {
     log::trace!("binary_matrix_rank::perform_test()");
 
+    // capture the current time before executing the actual test
+    let start_time = std::time::Instant::now();
+
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE_MATRIX_TEST)?;
+    let length = utils::evaluate_bit_string(
+        TEST_NAME,
+        bit_string,
+        constants::RECOMMENDED_SIZE_MATRIX_TEST,
+    )?;
 
     // the test is optimized for M = Q = 32 and a bit size of n = 32 * 32 * 38. If the values are
     // not matching, log a warning because approximations may not fit anymore
@@ -101,7 +111,12 @@ pub fn perform_test(
 
     // finally, compute p-value with exp(-chi_square / 2.0)
     let p_value = (-chi_square * 0.5).exp();
-    log::info!("Binary Matrix Rank: p-value = {}", p_value);
+    log::info!("{}: p-value = {}", TEST_NAME, p_value);
+
+    // capture the current time after the test got executed and calculate elapsed time
+    let end_time = std::time::Instant::now();
+    let elapsed_time = end_time.duration_since(start_time).as_secs_f64();
+    log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
 
     Ok(p_value)
 }

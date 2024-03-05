@@ -10,8 +10,11 @@
 //! whether the oscillation between such zeros and ones is too fast or too slow."
 
 use crate::constants;
+use crate::customtypes;
 use crate::utils;
 use anyhow::{Context, Result};
+
+const TEST_NAME: customtypes::Test = customtypes::Test::Runs;
 
 /// Perform the Runs test.
 ///
@@ -26,8 +29,11 @@ use anyhow::{Context, Result};
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("runs::perform_test()");
 
+    // capture the current time before executing the actual test
+    let start_time = std::time::Instant::now();
+
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+    let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // determine the number of ones in given bit string and compute pre-test proportion = #ones/length
@@ -60,7 +66,12 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::debug!("Numerator: {}, Denominator: {}", numerator, denominator);
 
     let p_value = statrs::function::erf::erfc(numerator / denominator);
-    log::info!("Runs: p-value = {}", p_value);
+    log::info!("{}: p-value = {}", TEST_NAME, p_value);
+
+    // capture the current time after the test got executed and calculate elapsed time
+    let end_time = std::time::Instant::now();
+    let elapsed_time = end_time.duration_since(start_time).as_secs_f64();
+    log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
 
     Ok(p_value)
 }

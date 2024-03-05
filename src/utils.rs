@@ -1,5 +1,6 @@
 //! This module contains useful functions to support the statistical tests from the NIST suite.
 
+use crate::customtypes;
 use anyhow::{Context, Result};
 use openssl::rand::rand_bytes;
 use std::fs::File;
@@ -34,6 +35,7 @@ pub fn get_random_bytes(num_bytes: usize) -> Result<Vec<u8>> {
 ///
 /// # Arguments
 ///
+/// test_name - The name of the test the evaluation is made for
 /// bit_string - The bit string to evaluate
 /// recommended_size - Log a warning if passed bit string has not recommended size
 ///
@@ -41,7 +43,11 @@ pub fn get_random_bytes(num_bytes: usize) -> Result<Vec<u8>> {
 ///
 /// Ok(length) - Return length of bit string if everything is okay
 /// Err(err) - Some error occured
-pub fn evaluate_bit_string(bit_string: &str, recommended_size: usize) -> Result<usize> {
+pub fn evaluate_bit_string(
+    test_name: customtypes::Test,
+    bit_string: &str,
+    recommended_size: usize,
+) -> Result<usize> {
     log::trace!("utils::evaluate_bit_string()");
 
     // check validity of passed bit string
@@ -55,7 +61,8 @@ pub fn evaluate_bit_string(bit_string: &str, recommended_size: usize) -> Result<
     // If bit string has not the recommended size, it is not an error but log a warning anyways
     if length < recommended_size {
         log::warn!(
-            "Recommended size is at least {} bits. Consider imprecision when calculating p-value",
+            "Recommended size for {} is at least {} bits. Consider imprecision when calculating p-value",
+            test_name,
             recommended_size
         );
     }

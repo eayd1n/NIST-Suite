@@ -1,10 +1,12 @@
 #[cfg(test)]
 mod tests {
+    use crate::customtypes;
     use crate::logger;
     use crate::utils;
     use serial_test::serial;
 
     const LOGLEVEL: &str = "Trace";
+    const TEST_NAME: customtypes::Test = customtypes::Test::FrequencyMonobit;
     static RANDOM_BYTES_1: [u8; 6] = [0xab, 0x00, 0xde, 0xd6, 0xf3, 0xc0];
     static RANDOM_BYTES_2: [u8; 9] = [0x00, 0xFF, 0xDE, 0x89, 0xC0, 0x3D, 0xA6, 0xC2, 0xB5];
     const BIT_STRING_1: &str = "101010110000000011011110110101101111001111000000";
@@ -45,25 +47,25 @@ mod tests {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
         assert_eq!(
-            utils::evaluate_bit_string(BIT_STRING_1, BIT_STRING_1.len()).unwrap(),
+            utils::evaluate_bit_string(TEST_NAME, BIT_STRING_1, BIT_STRING_1.len()).unwrap(),
             BIT_STRING_1.len()
         );
         assert_eq!(
-            utils::evaluate_bit_string(BIT_STRING_2, BIT_STRING_2.len()).unwrap(),
+            utils::evaluate_bit_string(TEST_NAME, BIT_STRING_2, BIT_STRING_2.len()).unwrap(),
             BIT_STRING_2.len()
         );
 
         let mut success: bool;
 
         // pass empty string
-        match utils::evaluate_bit_string("", NUMBER_OF_BYTES) {
+        match utils::evaluate_bit_string(TEST_NAME, "", NUMBER_OF_BYTES) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };
         assert!(!success);
 
         // pass invalid string
-        match utils::evaluate_bit_string(INVALID_BIT_STRING, NUMBER_OF_BYTES) {
+        match utils::evaluate_bit_string(TEST_NAME, INVALID_BIT_STRING, NUMBER_OF_BYTES) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };

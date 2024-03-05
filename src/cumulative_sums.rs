@@ -16,6 +16,8 @@ use crate::utils;
 use anyhow::{Context, Result};
 use statrs::distribution::ContinuousCDF;
 
+const TEST_NAME: customtypes::Test = customtypes::Test::CumulativeSums;
+
 /// Perform the Cumulative Sums Test.
 ///
 /// # Arguments
@@ -30,8 +32,11 @@ use statrs::distribution::ContinuousCDF;
 pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
     log::trace!("cumulative_sums::perform_test()");
 
+    // capture the current time before executing the actual test
+    let start_time = std::time::Instant::now();
+
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::RECOMMENDED_SIZE)
+    let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // Create cumulative sums depending on chosen mode
@@ -106,11 +111,12 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
     }
 
     let p_value = 1.0 - sum_1 + sum_2;
-    log::info!(
-        "Cumulative Sums (Cusum): p-value = {} ('{:?}' Mode)",
-        p_value,
-        mode
-    );
+    log::info!("{}: p-value = {} ('{:?}' Mode)", TEST_NAME, p_value, mode);
+
+    // capture the current time after the test got executed and calculate elapsed time
+    let end_time = std::time::Instant::now();
+    let elapsed_time = end_time.duration_since(start_time).as_secs_f64();
+    log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
 
     Ok(p_value)
 }

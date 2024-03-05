@@ -15,6 +15,8 @@ use crate::utils;
 use anyhow::{Context, Result};
 use std::collections::BTreeMap;
 
+const TEST_NAME: customtypes::Test = customtypes::Test::LongestRun;
+
 /// Perform the Longest Run of Ones in a Block test.
 ///
 /// # Arguments
@@ -28,8 +30,11 @@ use std::collections::BTreeMap;
 pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::trace!("longest_run::perform_test()");
 
+    // capture the current time before executing the actual test
+    let start_time = std::time::Instant::now();
+
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(bit_string, constants::MIN_LENGTH)
+    let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::MIN_LENGTH)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // evaluate bit string length and determine longest run configuration
@@ -48,7 +53,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
-    log::trace!("Number of runs before merge: {:?}", counts);
+    log::debug!("Number of runs before merge: {:?}", counts);
     let vi_counts = calculate_vi_values(counts, config.thresholds);
     log::debug!("Number of runs after merge: {:?}", vi_counts);
 
@@ -73,7 +78,12 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         ((config.pi_values.len() as f64) - 1.0) * 0.5,
         chi_square * 0.5,
     );
-    log::debug!("Longest Run Within a Block: p-value = {}", p_value);
+    log::info!("{}: p-value = {}", TEST_NAME, p_value);
+
+    // capture the current time after the test got executed and calculate elapsed time
+    let end_time = std::time::Instant::now();
+    let elapsed_time = end_time.duration_since(start_time).as_secs_f64();
+    log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
 
     Ok(p_value)
 }
