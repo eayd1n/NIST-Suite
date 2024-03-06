@@ -15,7 +15,7 @@ mod tests {
     const INVALID_BIT_STRING: &str = "010101010101011110101010101010101X0101010101010101010101";
     const NUMBER_OF_BYTES: usize = 100;
     const RANDOM_NUMBERS_FILE: &str = "/tmp/random_numbers";
-    const INVALID_FILE: &str = "/root/random_numbers";
+    const INVALID_FILE: &str = "/non-existing-dir/random_numbers";
 
     #[test]
     #[serial]

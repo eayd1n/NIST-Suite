@@ -1,4 +1,4 @@
-//! This module performs the Cumulative Sums (Cusum) Test.
+//! This module performs the Cumulative Sums (Cusums) Test.
 //!
 //! Description of test from NIST SP 800-22:
 //!
@@ -49,7 +49,7 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
     };
 
     // now compute the particular sums and determine the maximum sum. Instead of adding +1 for a
-    // '1' and '1 for a '0', just determine the number of ones and zeros and calculate the
+    // '1' and -1 for a '0', just determine the number of ones and zeros and calculate the
     // difference
     let mut max_sum_z = 0;
 
@@ -60,7 +60,7 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
         let count_zeros = block.chars().filter(|&c| c == '0').count();
         let count_ones = block.len() - count_zeros;
 
-        let current_sum = if count_zeros > count_ones {
+        let current_sum = if count_zeros >= count_ones {
             count_zeros - count_ones
         } else {
             count_ones - count_zeros

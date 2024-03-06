@@ -14,6 +14,7 @@ use anyhow::{Context, Result};
 use rustfft::{num_complex::Complex, FftPlanner};
 
 const TEST_NAME: customtypes::Test = customtypes::Test::DFTSpectral;
+const LOG_ARG: f64 = 1.0 / 0.05;
 
 /// Perform the Discrete Fourier Transform (Spectral) Test by determining the p-value.
 ///
@@ -39,8 +40,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     let spectrum = apply_dft(bit_string, length);
 
     // calculate height threshold T = sqrt(log(1/0.05) * length)
-    let arg: f64 = 1.0 / 0.05;
-    let height_threshold = (arg.log10() * (length as f64)).sqrt();
+    let height_threshold = (LOG_ARG.log10() * (length as f64)).sqrt();
     log::debug!("{}: Height Threshold T = {}", TEST_NAME, height_threshold);
 
     // calculate expected theoretical (95%) number of peaks N_0 = (0.95 * length) / 2.0
