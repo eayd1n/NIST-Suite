@@ -3,7 +3,7 @@
 /// Usual recommended size for several tests
 pub const RECOMMENDED_SIZE: usize = 100;
 
-/// Recommended size for "Discrete Fourier Transform (Spectral" Test
+/// Recommended size for "Discrete Fourier Transform (Spectral) Test
 pub const RECOMMENDED_SIZE_DFT: usize = 1000;
 
 /// Constants for the "Longest Run of Ones in a Block" test
@@ -41,3 +41,8 @@ pub const MATRIX_ROWS_M: usize = 32;
 pub const MATRIX_COLUMNS_Q: usize = 32;
 
 pub static APPROXIMATIONS: [f64; 3] = [0.2888, 0.5776, 0.1336];
+
+/// Constants for the "Non-overlapping Template Matching" test
+pub const N_BLOCKS_NON_OVERLAPPING_TEMPLATE: usize = 2;
+pub const TEMPLATE_LEN: (usize, usize) = (2, 10);
+pub const BASE_TWO: usize = 2;
