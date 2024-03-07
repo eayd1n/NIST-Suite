@@ -48,26 +48,20 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
         bit_string.chars().rev().collect::<String>()
     };
 
-    // now compute the particular sums and determine the maximum sum. Instead of adding +1 for a
-    // '1' and -1 for a '0', just determine the number of ones and zeros and calculate the
-    // difference
+    // now compute the particular sums and determine the maximum sum. '1' is a +1 whereas '0' is a
+    // -1
+    let mut current_sum: i64 = 0;
     let mut max_sum_z = 0;
 
-    for i in 0..length {
-        let num_bits = i + 1;
-        let block = &new_bit_string[0..num_bits];
-
-        let count_zeros = block.chars().filter(|&c| c == '0').count();
-        let count_ones = block.len() - count_zeros;
-
-        let current_sum = if count_zeros >= count_ones {
-            count_zeros - count_ones
+    for bit in new_bit_string.chars() {
+        if bit == '1' {
+            current_sum += 1;
         } else {
-            count_ones - count_zeros
-        };
+            current_sum -= 1;
+        }
 
-        if current_sum > max_sum_z {
-            max_sum_z = current_sum;
+        if current_sum.abs() > max_sum_z {
+            max_sum_z = current_sum.abs();
         }
     }
     log::debug!(

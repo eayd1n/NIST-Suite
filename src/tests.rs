@@ -21,7 +21,6 @@ mod dft_spectral_tests;
 
 #[cfg(test)]
 mod non_overlapping_template_tests;
-
+*/
 #[cfg(test)]
 mod cumulative_sums_tests;
-*/
