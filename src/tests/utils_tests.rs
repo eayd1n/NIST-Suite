@@ -14,7 +14,10 @@ mod tests {
         "000000001111111111011110100010011100000000111101101001101100001010110101";
     const INVALID_BIT_STRING: &str = "010101010101011110101010101010101X0101010101010101010101";
     const NUMBER_OF_BYTES: usize = 100;
-    const RANDOM_NUMBERS_FILE: &str = "/tmp/random_numbers";
+    const HEX_BYTES_FILE: &str = "/src/tests/testdata/random_hex_bytes";
+    const BIT_STRING_FROM_FILE: &str = "110010101111111010111010101111101101111010101101101111101110111111000000110111101010111111111110";
+    const BIT_STRING_FILE: &str = "/src/tests/testdata/random_bit_string";
+    const INVALID_CHAR_IN_FILE: &str = "/src/tests/testdata/random_invalid_char";
     const INVALID_FILE: &str = "/non-existing-dir/random_numbers";
 
     #[test]
@@ -74,67 +77,53 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_get_random_bytes() {
+    fn test_random_numbers_file() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        let random_bytes = match utils::get_random_bytes(NUMBER_OF_BYTES) {
-            Ok(random_bytes) => random_bytes,
-            Err(_) => Vec::<u8>::new(),
-        };
-        assert_eq!(random_bytes.len(), NUMBER_OF_BYTES);
+        // read file containing hex bytes
+        let hex_bytes_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + HEX_BYTES_FILE;
+        assert_eq!(
+            utils::read_random_numbers(&hex_bytes_file).unwrap(),
+            BIT_STRING_FROM_FILE
+        );
 
-        // pass zero bytes
-        let random_bytes = match utils::get_random_bytes(0) {
-            Ok(random_bytes) => random_bytes,
-            Err(_) => Vec::<u8>::new(),
-        };
-        assert!(random_bytes.is_empty());
-    }
+        // read file containing bits
+        let bit_string_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + BIT_STRING_FILE;
+        assert_eq!(
+            utils::read_random_numbers(&bit_string_file).unwrap(),
+            BIT_STRING_FROM_FILE
+        );
 
-    #[test]
-    #[serial]
-    fn test_random_bytes_file() {
-        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
-
-        if std::path::Path::new(RANDOM_NUMBERS_FILE).exists() {
-            let _ = std::fs::remove_file(RANDOM_NUMBERS_FILE);
-        }
-        assert!(!std::path::Path::new(RANDOM_NUMBERS_FILE).exists());
-
-        // first of all, generate 100 random bytes and write them to file
-        let write_random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
-        assert_eq!(write_random_bytes.len(), NUMBER_OF_BYTES);
-
-        let _ = utils::write_random_bytes(write_random_bytes.clone(), RANDOM_NUMBERS_FILE);
-        assert!(std::path::Path::new(RANDOM_NUMBERS_FILE).exists());
-
-        // now read the file to get the random numbers
-        let read_random_bytes = utils::read_random_bytes(RANDOM_NUMBERS_FILE).unwrap();
-        assert_eq!(read_random_bytes, write_random_bytes);
-
-        // pass empty vector to write_random_bytes
         let mut success: bool;
-        match utils::write_random_bytes(Vec::<u8>::new(), RANDOM_NUMBERS_FILE) {
+
+        // try to read file containing invalid character
+        let invalid_char_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + INVALID_CHAR_IN_FILE;
+        match utils::read_random_numbers(&invalid_char_file) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };
         assert!(!success);
 
-        // pass invalid file to both read_random_bytes and write_random_bytes
-        match utils::write_random_bytes(vec![0x00], INVALID_FILE) {
+        // try to read non-existing file
+        match utils::read_random_numbers(INVALID_FILE) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };
         assert!(!success);
-
-        match utils::read_random_bytes(INVALID_FILE) {
-            Ok(_) => success = true,
-            Err(_) => success = false,
-        };
-        assert!(!success);
-
-        // cleanup
-        let _ = std::fs::remove_file(RANDOM_NUMBERS_FILE);
-        assert!(!std::path::Path::new(RANDOM_NUMBERS_FILE).exists());
     }
 }

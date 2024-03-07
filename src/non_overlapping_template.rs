@@ -21,12 +21,13 @@ const TEST_NAME: customtypes::Test = customtypes::Test::NonOverlappingTemplate;
 ///
 /// bit_string - The bit string to be tested for randomness
 /// template_len - Length of templates to be used for test
+/// number_of_blocks - The number of blocks the bit string has to be divided into
 ///
 /// # Return
 ///
 /// Ok(p-value) - The p-value which indicates whether randomness is given or not
 /// Err(err) - Some error occured
-pub fn perform_test(bit_string: &str, template_len: usize) -> Result<f64> {
+pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usize) -> Result<f64> {
     log::trace!("non_overlapping_template::perform_test()");
 
     // capture the current time before executing the actual test
@@ -58,17 +59,17 @@ pub fn perform_test(bit_string: &str, template_len: usize) -> Result<f64> {
     }
 
     // construct block size M to get the substrings to be tested
-    let block_size_m = length / constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE;
+    let block_size_m = length / number_of_blocks;
     log::info!(
         "{}: Template length = {}, Block size M = {}, Number of blocks N = {}",
         TEST_NAME,
         template_len,
         block_size_m,
-        constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE
+        number_of_blocks
     );
 
     // calculate number of templates to be searched
-    let number_of_templates = constants::BASE_TWO.pow(template_len.try_into().unwrap());
+    let number_of_templates = 2_usize.pow(template_len.try_into().unwrap());
 
     // calculate theoretical mean and variance
     let first_fraction = 1.0 / (number_of_templates as f64);
@@ -92,7 +93,7 @@ pub fn perform_test(bit_string: &str, template_len: usize) -> Result<f64> {
         let mut template_counters = Vec::<usize>::new();
 
         // now iterate over blocks 1...N and count occurences of respective template in substring
-        for block in 0..constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE {
+        for block in 0..number_of_blocks {
             let start_index = block * block_size_m;
             let end_index = (block + 1) * block_size_m;
             let substring = &bit_string[start_index..end_index];
@@ -138,10 +139,7 @@ pub fn perform_test(bit_string: &str, template_len: usize) -> Result<f64> {
         let p_value = if chi_square == 0.0 {
             1.0
         } else {
-            statrs::function::gamma::gamma_ur(
-                (constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE as f64) * 0.5,
-                chi_square * 0.5,
-            )
+            statrs::function::gamma::gamma_ur((number_of_blocks as f64) * 0.5, chi_square * 0.5)
         };
         log::debug!(
             "{}: p-value = {} for template '{}'",

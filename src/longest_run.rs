@@ -49,9 +49,10 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
     let mut counts: BTreeMap<i32, i32> = BTreeMap::new();
 
-    for i in (0..length).step_by(config.block_size_m) {
-        let end_index = (i + config.block_size_m).min(length);
-        let block = &bit_string[i..end_index];
+    for block_num in 0..config.number_of_blocks {
+        let start_index = block_num * config.block_size;
+        let end_index = (block_num + 1) * config.block_size;
+        let block = &bit_string[start_index..end_index];
         let max_consecutive_ones = count_max_consecutive_ones(block);
 
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
@@ -212,7 +213,7 @@ fn calculate_vi_values(
     // Iterate from the minimum threshold to one less than the maximum threshold
     for threshold in (thresholds.0 + 1)..thresholds.1 {
         // If there were no counts for the current threshold
-        if !run_counts.contains_key(&threshold) {
+        if !vi_counts.contains_key(&threshold) {
             // Insert a zero count for the current threshold
             vi_counts.insert(threshold, 0);
         }
@@ -220,13 +221,13 @@ fn calculate_vi_values(
 
     // If there were no counts less than or equal to the min threshold,
     // insert a zero count for the min threshold
-    if !run_counts.contains_key(&thresholds.0) {
+    if !vi_counts.contains_key(&thresholds.0) {
         vi_counts.insert(thresholds.0, 0);
     }
 
     // If there were no counts greater than or equal to the max threshold,
     // insert a zero count for the max threshold
-    if !run_counts.contains_key(&thresholds.1) {
+    if !vi_counts.contains_key(&thresholds.1) {
         vi_counts.insert(thresholds.1, 0);
     }
 

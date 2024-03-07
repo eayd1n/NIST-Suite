@@ -4,13 +4,15 @@ mod tests {
     use crate::constants;
     use crate::logger;
     use crate::utils;
-    use rug::{ops::Pow, Float, Integer};
     use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "01011001001010101101"; // example from NIST Paper. p-value should be 0.741948
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
-    const NUMBER_OF_BYTES: usize = 12500;
+    const PI_FILE: &str = "/src/tests/testdata/data.pi";
+    const E_FILE: &str = "/src/tests/testdata/data.e";
+    const SQRT_2_FILE: &str = "/src/tests/testdata/data.sqrt2";
+    const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
 
     // XXX Fix binary matrix rank
     #[test]
@@ -20,46 +22,73 @@ mod tests {
 
         assert!(binary_matrix_rank::perform_test(BIT_STRING_1, 3, 3).unwrap() >= 0.01);
 
-        // Set precision to 100,000 binary digits
-        let mut e = Float::with_val(100_000, 0.0);
-        e.set_prec(100_000);
-
-        // Calculate e with desired precision
-        e = Float::with_val(100_000, 1).exp();
-
-        // Extract the fractional part by subtracting the integer part
-        let fractional_part = e.clone() - e.floor();
-
-        // Multiply the fractional part by 2^100,000 to extract the binary digits
-        let multiplied: Float = fractional_part * Float::with_val(1, 2).pow(100_000);
-
-        // Convert the multiplied value to an integer
-        let multiplied_integer: Integer = multiplied.to_integer().unwrap();
-
-        // Convert the integer to its binary representation as a string
-        let binary_digits = multiplied_integer.to_string_radix(2);
-
+        // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
+        let pi_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + PI_FILE;
+        let pi_bit_string = utils::read_random_numbers(&pi_file).unwrap();
         assert!(
             binary_matrix_rank::perform_test(
-                &binary_digits,
+                &pi_bit_string,
                 constants::MATRIX_ROWS_M,
                 constants::MATRIX_COLUMNS_Q
             )
             .unwrap()
-                != 0.01
+                >= 0.01
         );
 
-        // test 100,000 newly generated random bits
-        let random_bytes = utils::get_random_bytes(NUMBER_OF_BYTES).unwrap();
-        let bit_string = utils::hex_bytes_to_bit_string(random_bytes).unwrap();
+        let e_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + E_FILE;
+        let e_bit_string = utils::read_random_numbers(&e_file).unwrap();
         assert!(
             binary_matrix_rank::perform_test(
-                &bit_string,
+                &e_bit_string,
                 constants::MATRIX_ROWS_M,
                 constants::MATRIX_COLUMNS_Q
             )
             .unwrap()
-                != 0.01
+                >= 0.01
+        );
+
+        let sqrt_2_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SQRT_2_FILE;
+        let sqrt_2_bit_string = utils::read_random_numbers(&sqrt_2_file).unwrap();
+        assert!(
+            binary_matrix_rank::perform_test(
+                &sqrt_2_bit_string,
+                constants::MATRIX_ROWS_M,
+                constants::MATRIX_COLUMNS_Q
+            )
+            .unwrap()
+                >= 0.01
+        );
+
+        let sqrt_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SQRT_3_FILE;
+        let sqrt_3_bit_string = utils::read_random_numbers(&sqrt_3_file).unwrap();
+        assert!(
+            binary_matrix_rank::perform_test(
+                &sqrt_3_bit_string,
+                constants::MATRIX_ROWS_M,
+                constants::MATRIX_COLUMNS_Q
+            )
+            .unwrap()
+                >= 0.01
         );
     }
 

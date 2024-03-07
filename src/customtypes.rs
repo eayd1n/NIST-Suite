@@ -46,7 +46,7 @@ impl std::fmt::Display for Test {
 /// Struct for "Longest Run of Ones in a Block" test
 #[derive(Debug)]
 pub struct LongestRunConfig<'a> {
-    pub block_size_m: usize,
+    pub block_size: usize,
     pub number_of_blocks: usize,
     pub thresholds: (i32, i32),
     pub pi_values: &'a [f64],
@@ -54,13 +54,13 @@ pub struct LongestRunConfig<'a> {
 
 impl<'a> LongestRunConfig<'a> {
     pub fn create(
-        block_size_m: usize,
+        block_size: usize,
         number_of_blocks: usize,
         thresholds: (i32, i32),
         pi_values: &'a [f64],
     ) -> Self {
         LongestRunConfig {
-            block_size_m,
+            block_size,
             number_of_blocks,
             thresholds,
             pi_values,
