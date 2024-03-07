@@ -73,7 +73,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
             pi_value
         );
 
-        let constant = (config.n_blocks as f64) * pi_value;
+        let constant = (config.number_of_blocks as f64) * pi_value;
         chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
     }
     log::debug!("{}: Value of chi_square: {}", TEST_NAME, chi_square);

@@ -34,12 +34,13 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
-        .with_context(|| "Invalid character(s) in passed bit string detected")?;
+        .with_context(|| "Invalid character(s) in passed bit string detected")?
+        as f64;
 
     // determine the number of ones in given bit string and compute pre-test proportion = #ones/length
-    let count_ones = bit_string.chars().filter(|&c| c == '1').count();
+    let count_ones = bit_string.chars().filter(|&c| c == '1').count() as f64;
 
-    let pre_test_proportion = (count_ones as f64) / (length as f64);
+    let pre_test_proportion = count_ones / length;
     log::debug!(
         "{}: Given bit string contains {} ones and {} zeros, pre-test proportion: {}",
         TEST_NAME,
@@ -62,8 +63,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // finally, compute p-value with complementary error function
     let constant = pre_test_proportion * (1.0 - pre_test_proportion);
-    let numerator = ((v_n_observed as f64) - 2.0 * (length as f64) * constant).abs();
-    let denominator = 2.0 * (2.0 * (length as f64)).sqrt() * constant;
+    let numerator = ((v_n_observed as f64) - 2.0 * length * constant).abs();
+    let denominator = 2.0 * (2.0 * length).sqrt() * constant;
     log::debug!(
         "{}: Numerator: {}, Denominator: {}",
         TEST_NAME,

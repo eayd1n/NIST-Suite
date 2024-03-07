@@ -34,10 +34,11 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // check if bit string contains invalid characters
     let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
-        .with_context(|| "Invalid character(s) in passed bit string detected")?;
+        .with_context(|| "Invalid character(s) in passed bit string detected")?
+        as f64;
 
     // first of all, we need to compute the partial sum S_n. This is the difference between #ones and #zeroes
-    let count_zeros = bit_string.chars().filter(|&c| c == '0').count();
+    let count_zeros = bit_string.chars().filter(|&c| c == '0').count() as f64;
     let count_ones = length - count_zeros;
 
     log::info!(
@@ -47,14 +48,10 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         count_ones
     );
 
-    let partial_sum = if count_zeros >= count_ones {
-        (count_zeros - count_ones) as f64
-    } else {
-        (count_ones - count_zeros) as f64
-    };
+    let partial_sum = (count_zeros - count_ones).abs();
 
     // now calculate observed value S_obs = |S_n| / sqrt(length)
-    let observed = partial_sum / (length as f64).sqrt();
+    let observed = partial_sum / length.sqrt();
     log::debug!("{}: Observed value S_obs: {}", TEST_NAME, observed);
 
     // finally, compute p-value to decide whether given bit string is random or not

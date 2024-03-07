@@ -19,13 +19,13 @@ const TEST_NAME: customtypes::Test = customtypes::Test::FrequencyBlock;
 /// # Arguments
 ///
 /// bit_string - The bit string to be tested for randomness
-/// block_size_m - Divide the bit string into equal blocks of size M
+/// block_size - Divide the bit string into equal blocks of size M
 ///
 /// # Return
 ///
 /// Ok(p-value) - The p-value which indicates whether randomness is given or not
 /// Err(err) - Some error occured
-pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
+pub fn perform_test(bit_string: &str, block_size: usize) -> Result<f64> {
     log::trace!("frequency_block::perform_test()");
 
     // capture the current time before executing the actual test
@@ -36,32 +36,32 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // check block size M for validity and get number of blocks N
-    let n_blocks = evaluate_block_size(length, block_size_m).with_context(|| {
+    let number_of_blocks = evaluate_block_size(length, block_size).with_context(|| {
         format!(
             "{}: Either block size M or number of blocks N does not fit to defined requirements",
             TEST_NAME
         )
     })?;
 
-    // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size_m
+    // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size
     let mut pi_i = Vec::new();
     let mut index = 0;
 
-    for block_num in 0..n_blocks {
-        let block = &bit_string[index..(index + block_size_m)];
-        let count_ones = block.chars().filter(|&c| c == '1').count();
+    for current_block in 0..number_of_blocks {
+        let block = &bit_string[index..(index + block_size)];
+        let count_ones = block.chars().filter(|&c| c == '1').count() as f64;
         log::trace!(
             "{}: Block {}/{}: '{}' consists of {} ones",
             TEST_NAME,
-            block_num + 1,
-            n_blocks,
+            current_block + 1,
+            number_of_blocks,
             block,
             count_ones
         );
 
-        pi_i.push((count_ones as f64) / (block_size_m as f64));
+        pi_i.push(count_ones / (block_size as f64));
 
-        index += block_size_m;
+        index += block_size;
     }
 
     // now compute the chi_square statistics: chi_square = 4 * M * sum(p_i - 0.5)^2
@@ -73,7 +73,7 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     }
     log::debug!("{}: Calculated observed value {}", TEST_NAME, observed);
 
-    let chi_square = 4.0 * (block_size_m as f64) * observed;
+    let chi_square = 4.0 * (block_size as f64) * observed;
     log::debug!(
         "{}: Chi square for given bit string: {}",
         TEST_NAME,
@@ -86,7 +86,7 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
     let p_value = if chi_square == 0.0 {
         1.0
     } else {
-        statrs::function::gamma::gamma_ur((n_blocks as f64) * 0.5, chi_square * 0.5)
+        statrs::function::gamma::gamma_ur((number_of_blocks as f64) * 0.5, chi_square * 0.5)
     };
     log::info!("{}: p-value = {}", TEST_NAME, p_value);
 
@@ -103,17 +103,17 @@ pub fn perform_test(bit_string: &str, block_size_m: usize) -> Result<f64> {
 /// # Arguments
 ///
 /// length - Bit string length
-/// block_size_m - The block size M to be evaluated
+/// block_size - The block size M to be evaluated
 ///
 /// # Return
 ///
-/// Ok(n_blocks) - Number of blocks to be processed based on block size M
+/// Ok(number_of_blocks) - Number of blocks to be processed based on block size M
 /// Err(err) - Some error occured
-fn evaluate_block_size(length: usize, block_size_m: usize) -> Result<usize> {
+fn evaluate_block_size(length: usize, block_size: usize) -> Result<usize> {
     log::trace!("frequency_block::evaluate_block_size()");
 
     // M should be less than bit string length but greater than (length / 100)
-    if block_size_m >= length || block_size_m <= (length / constants::RECOMMENDED_SIZE) {
+    if block_size >= length || block_size <= (length / constants::RECOMMENDED_SIZE) {
         anyhow::bail!(
             "{}: Choose block size as of {} < M < {}",
             TEST_NAME,
@@ -122,23 +122,23 @@ fn evaluate_block_size(length: usize, block_size_m: usize) -> Result<usize> {
         );
     }
 
-    // calculate number of blocks N by floor(length/block_size_m). N should be < 100
-    let n_blocks = length / block_size_m;
-    if n_blocks >= constants::RECOMMENDED_SIZE {
+    // calculate number of blocks N by floor(length/block_size). N should be < 100
+    let number_of_blocks = length / block_size;
+    if number_of_blocks >= constants::RECOMMENDED_SIZE {
         anyhow::bail!(
             "{}: Number of blocks exceed {}: {}. Please choose a larger M",
             TEST_NAME,
             constants::RECOMMENDED_SIZE,
-            n_blocks
+            number_of_blocks
         );
     }
 
     log::info!(
         "{}: Block size M: {}, number of blocks N to proceed: {}",
         TEST_NAME,
-        block_size_m,
-        n_blocks
+        block_size,
+        number_of_blocks
     );
 
-    Ok(n_blocks)
+    Ok(number_of_blocks)
 }
