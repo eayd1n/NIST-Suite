@@ -5,12 +5,15 @@ mod tests {
     use crate::utils;
 
     const LOGLEVEL: &str = "Debug";
-    const BIT_STRING_1: &str = "1001101011"; // Example from NIST paper. p-value should be 0.147232
-    const BIT_STRING_2: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    const BIT_STRING_3: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
-    const BIT_STRING_4: &str = "1010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010";
-    const BIT_STRING_5: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
-    const BIT_STRING_6: &str = "1100110011001100110011001100110011001100110011001100110011001100110011001100110011001100110011001100";
+    const BIT_STRING_NIST_1: &str = "1001101011";
+    const P_VALUE_NIST_1: f64 = 0.14723225537016021;
+    const BIT_STRING_NIST_2: &str = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000";
+    const P_VALUE_NIST_2: f64 = 0.5007979178870894;
+    const BIT_STRING_ONLY_ZEROS: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    const BIT_STRING_ONLY_ONES: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+    const BIT_STRING_FAST_OSCILLATION: &str = "1010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010";
+    const BIT_STRING_SLOW_OSCILLATION: &str = "1011111111111111111111110111111111111111111111111101111111111111111111111111101111111111111111111110";
+    const BIT_STRING_PERFECT: &str = "1100110011001100110011001100110011001100110011001100110011001100110011001100110011001100110011001100";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
     const PI_FILE: &str = "/src/tests/testdata/data.pi";
     const E_FILE: &str = "/src/tests/testdata/data.e";
@@ -21,12 +24,16 @@ mod tests {
     fn test_runs() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        assert!(runs::perform_test(BIT_STRING_1).unwrap() > 0.01);
-        assert!(runs::perform_test(BIT_STRING_2).unwrap() <= 0.01);
-        assert!(runs::perform_test(BIT_STRING_3).unwrap() > 0.01);
-        assert!(runs::perform_test(BIT_STRING_4).unwrap() <= 0.01);
-        assert!(runs::perform_test(BIT_STRING_5).unwrap() <= 0.01);
-        assert!(runs::perform_test(BIT_STRING_6).unwrap() == 1.00);
+        assert_eq!(
+            runs::perform_test(BIT_STRING_NIST_1).unwrap(),
+            P_VALUE_NIST_1
+        );
+        assert_eq!(
+            runs::perform_test(BIT_STRING_NIST_2).unwrap(),
+            P_VALUE_NIST_2
+        );
+        assert!(runs::perform_test(BIT_STRING_FAST_OSCILLATION).unwrap() <= 0.01);
+        assert!(runs::perform_test(BIT_STRING_PERFECT).unwrap() == 1.00);
 
         // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
         let pi_file = std::env::current_dir()
@@ -81,6 +88,25 @@ mod tests {
 
         // pass invalid bit string
         match runs::perform_test(INVALID_BIT_STRING) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        // pass bit strings which are not applicable with test
+        match runs::perform_test(BIT_STRING_ONLY_ZEROS) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        match runs::perform_test(BIT_STRING_ONLY_ONES) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        match runs::perform_test(BIT_STRING_SLOW_OSCILLATION) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };

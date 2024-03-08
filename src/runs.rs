@@ -49,6 +49,19 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         pre_test_proportion
     );
 
+    // check whether test can be performed if requirement 2 / sqrt(length) is not satisfied
+    let tau = 2.0 / (length).sqrt();
+    let requirement = (pre_test_proportion - 0.5).abs();
+
+    if requirement >= tau {
+        anyhow::bail!(
+            "{} is not applicable! Tau ({}) < Requirement ({})",
+            TEST_NAME,
+            tau,
+            requirement
+        );
+    }
+
     // compute observed runs test statistics V_n(obs). Therefore compare current bit with
     // consecutive one. If not equal, add 1 to counter, otherwise do nothing
     let mut v_n_observed = 1;
