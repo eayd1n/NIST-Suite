@@ -210,20 +210,12 @@ fn calculate_vi_values(
         }
     }
 
-    // Iterate from the minimum threshold to one less than the maximum threshold
-    for threshold in thresholds.0..thresholds.1 {
+    // Iterate from the minimum threshold to the maximum threshold
+    for threshold in thresholds.0..(thresholds.1 + 1) {
         // If there were no counts for the current threshold, insert a zero count for the current
         // threshold
         vi_counts.entry(threshold).or_insert(0);
     }
-
-    // If there were no counts less than or equal to the min threshold,
-    // insert a zero count for the min threshold
-    vi_counts.entry(thresholds.0).or_insert(0);
-
-    // If there were no counts greater than or equal to the max threshold,
-    // insert a zero count for the max threshold
-    vi_counts.entry(thresholds.1).or_insert(0);
 
     vi_counts
 }
