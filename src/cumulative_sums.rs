@@ -60,9 +60,7 @@ pub fn perform_test(bit_string: &str, mode: customtypes::Mode) -> Result<f64> {
             current_sum -= 1;
         }
 
-        if current_sum.abs() > max_sum_z {
-            max_sum_z = current_sum.abs();
-        }
+        max_sum_z = max_sum_z.max(current_sum.abs());
     }
     log::debug!(
         "{}: Determined maximum value z of cumulative sums: {}",
