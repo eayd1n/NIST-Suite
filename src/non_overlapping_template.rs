@@ -62,7 +62,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let mut p_values = Vec::<f64>::new();
 
     for num in 0..number_of_templates {
-        let template = format!("{:0width$b}", num, width = template_len as usize);
+        let template = format!("{:0width$b}", num, width = template_len);
         let mut template_counters = Vec::<usize>::new();
 
         // now iterate over blocks 1...N and count occurences of respective template in substring
@@ -80,7 +80,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
                     index,
                     index + template_len
                 );
-                if &substring[index..(index + template_len)] == template {
+                if substring[index..(index + template_len)] == template {
                     current_counter += 1;
                     index += template_len;
                 } else {
