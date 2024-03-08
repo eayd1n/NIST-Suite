@@ -5,8 +5,12 @@ mod tests {
     use crate::non_overlapping_template;
     use crate::utils;
 
-    const LOGLEVEL: &str = "Trace";
-    const BIT_STRING_1: &str = "10100100101110010110"; // example from NIST Paper. p-value should be 0.344154
+    const LOGLEVEL: &str = "Debug";
+    const BIT_STRING_NIST_1: &str = "10100100101110010110";
+    const MEAN_P_VALUE_NIST_1: f64 = 0.32844090904367407;
+    const BIT_STRING_ONLY_ZEROS: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    const BIT_STRING_ONLY_ONES: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+    const BIT_STRING_SAME_PATTERN: &str = "1101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
     const PI_FILE: &str = "/src/tests/testdata/data.pi";
     const E_FILE: &str = "/src/tests/testdata/data.e";
@@ -17,7 +21,23 @@ mod tests {
     fn test_non_overlapping_template() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
-        assert!(non_overlapping_template::perform_test(BIT_STRING_1, 3, 2).unwrap() >= 0.01);
+        assert_eq!(
+            non_overlapping_template::perform_test(BIT_STRING_NIST_1, 3, 2).unwrap(),
+            MEAN_P_VALUE_NIST_1
+        );
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_ONLY_ZEROS, 4, 2).unwrap() <= 0.01
+        );
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_ONLY_ONES, 4, 2).unwrap() <= 0.01
+        );
+        assert_eq!(
+            non_overlapping_template::perform_test(BIT_STRING_ONLY_ZEROS, 4, 2).unwrap(),
+            non_overlapping_template::perform_test(BIT_STRING_ONLY_ONES, 4, 2).unwrap()
+        );
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_SAME_PATTERN, 3, 2).unwrap() <= 0.01
+        );
 
         // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
         let pi_file = std::env::current_dir()
@@ -27,15 +47,7 @@ mod tests {
             .to_owned()
             + PI_FILE;
         let pi_bit_string = utils::read_random_numbers(&pi_file).unwrap();
-        assert!(
-            non_overlapping_template::perform_test(
-                &pi_bit_string,
-                10,
-                constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE
-            )
-            .unwrap()
-                >= 0.01
-        );
+        assert!(non_overlapping_template::perform_test(&pi_bit_string, 10, 8).unwrap() >= 0.01);
 
         let e_file = std::env::current_dir()
             .unwrap()
@@ -44,15 +56,7 @@ mod tests {
             .to_owned()
             + E_FILE;
         let e_bit_string = utils::read_random_numbers(&e_file).unwrap();
-        assert!(
-            non_overlapping_template::perform_test(
-                &e_bit_string,
-                10,
-                constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE
-            )
-            .unwrap()
-                >= 0.01
-        );
+        assert!(non_overlapping_template::perform_test(&e_bit_string, 10, 8).unwrap() >= 0.01);
 
         let sqrt_2_file = std::env::current_dir()
             .unwrap()
@@ -61,15 +65,7 @@ mod tests {
             .to_owned()
             + SQRT_2_FILE;
         let sqrt_2_bit_string = utils::read_random_numbers(&sqrt_2_file).unwrap();
-        assert!(
-            non_overlapping_template::perform_test(
-                &sqrt_2_bit_string,
-                10,
-                constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE
-            )
-            .unwrap()
-                >= 0.01
-        );
+        assert!(non_overlapping_template::perform_test(&sqrt_2_bit_string, 10, 8).unwrap() >= 0.01);
 
         let sqrt_3_file = std::env::current_dir()
             .unwrap()
@@ -78,15 +74,7 @@ mod tests {
             .to_owned()
             + SQRT_3_FILE;
         let sqrt_3_bit_string = utils::read_random_numbers(&sqrt_3_file).unwrap();
-        assert!(
-            non_overlapping_template::perform_test(
-                &sqrt_3_bit_string,
-                10,
-                constants::N_BLOCKS_NON_OVERLAPPING_TEMPLATE
-            )
-            .unwrap()
-                >= 0.01
-        );
+        assert!(non_overlapping_template::perform_test(&sqrt_3_bit_string, 10, 8).unwrap() >= 0.01);
     }
 
     #[test]
@@ -110,13 +98,20 @@ mod tests {
         assert!(!success);
 
         // pass invalid template length sizes
-        match non_overlapping_template::perform_test(BIT_STRING_1, 0, 4) {
+        match non_overlapping_template::perform_test(BIT_STRING_NIST_1, 0, 4) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };
         assert!(!success);
 
-        match non_overlapping_template::perform_test(INVALID_BIT_STRING, 11, 3) {
+        match non_overlapping_template::perform_test(BIT_STRING_NIST_1, 11, 3) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(!success);
+
+        // pass invalid number of blocks size
+        match non_overlapping_template::perform_test(BIT_STRING_NIST_1, 3, 120) {
             Ok(_) => success = true,
             Err(_) => success = false,
         };

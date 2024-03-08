@@ -37,8 +37,8 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
-    // evaluate template length and get the block size m
-    let block_size = evaluate_template_length(length, template_len, number_of_blocks)
+    // evaluate the other input and get the block size m
+    let block_size = evaluate_test_params(length, template_len, number_of_blocks)
         .with_context(|| "Template length does not match defined requirements")?;
 
     // calculate number of templates to be searched
@@ -71,30 +71,24 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
             let end_index = (block + 1) * block_size;
             let substring = &bit_string[start_index..end_index];
 
-            let mut current_counter = 0;
+            let mut counter = 0;
             let mut index = 0;
 
-            while (index + template_len) < block_size {
-                log::trace!(
-                    "Index: {}, Index + Template length: {}",
-                    index,
-                    index + template_len
-                );
-                if substring[index..(index + template_len)] == template {
-                    current_counter += 1;
-                    index += template_len;
-                } else {
-                    index += 1;
-                }
+            while let Some(start) = substring[index..].find(&template) {
+                counter += 1;
+
+                // move the index to the next possible occurence
+                index += start + template_len;
             }
+
             log::trace!(
                 "{}: Template '{}' in substring '{}' found {} times",
                 TEST_NAME,
                 template,
                 substring,
-                current_counter
+                counter
             );
-            template_counters.push(current_counter);
+            template_counters.push(counter);
         }
         // compute chi_square statistics
         let mut chi_square = 0.0;
@@ -135,7 +129,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     Ok(p_values_mean)
 }
 
-/// Evaluate passed template length and return the resulting block size M.
+/// Evaluate passed test parameters and return the resulting block size M.
 ///
 /// # Arguments
 ///
@@ -147,13 +141,14 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
 ///
 /// Ok(block_size) - The resulting block size if template length is okay
 /// Err(err) - Some error occured
-fn evaluate_template_length(
+fn evaluate_test_params(
     bit_string_length: usize,
     template_len: usize,
     number_of_blocks: usize,
 ) -> Result<usize> {
-    log::trace!("non_overlapping_template::evaluate_template_length()");
+    log::trace!("non_overlapping_template::evaluate_test_params()");
 
+    // check whether template length is between thresholds for meaningful results
     if !(constants::TEMPLATE_LEN.0..constants::TEMPLATE_LEN.1 + 1).contains(&template_len) {
         anyhow::bail!(
             "{}: Passed template length '{}' must be between {} and {}",
@@ -174,8 +169,29 @@ fn evaluate_template_length(
         );
     }
 
+    // check number of blocks
+    if number_of_blocks > constants::RECOMMENDED_SIZE {
+        anyhow::bail!(
+            "{}: Number of blocks N ({}) is greater than recommended size ({})",
+            TEST_NAME,
+            number_of_blocks,
+            constants::RECOMMENDED_SIZE
+        );
+    }
+
     // construct block size M to get the substrings to be tested
     let block_size = bit_string_length / number_of_blocks;
+    let recommended_size = bit_string_length / 100;
+
+    if block_size <= recommended_size {
+        anyhow::bail!(
+            "{}: Block size M ({}) is less than or equal to {}. Choose smaller number of blocks",
+            TEST_NAME,
+            block_size,
+            recommended_size
+        );
+    }
+
     log::info!(
         "{}: Template length = {}, Block size M = {}, Number of blocks N = {}",
         TEST_NAME,
