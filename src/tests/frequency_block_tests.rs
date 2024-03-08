@@ -3,7 +3,6 @@ mod tests {
     use crate::frequency_block;
     use crate::logger;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "0110011010"; // Example from NIST paper. p-value should be 0.801252
@@ -19,7 +18,6 @@ mod tests {
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
 
     #[test]
-    #[serial]
     fn test_frequency_block() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -69,7 +67,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_frequency_block_error_cases() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

@@ -4,7 +4,6 @@ mod tests {
     use crate::constants;
     use crate::logger;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "01011001001010101101"; // example from NIST Paper. p-value should be 0.741948
@@ -16,7 +15,6 @@ mod tests {
 
     // XXX Fix binary matrix rank
     #[test]
-    #[serial]
     fn test_binary_matrix_rank() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -93,7 +91,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_binary_matrix_rank_error_cases() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

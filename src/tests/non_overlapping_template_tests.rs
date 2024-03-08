@@ -4,7 +4,6 @@ mod tests {
     use crate::logger;
     use crate::non_overlapping_template;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Trace";
     const BIT_STRING_1: &str = "10100100101110010110"; // example from NIST Paper. p-value should be 0.344154
@@ -15,7 +14,6 @@ mod tests {
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
 
     #[test]
-    #[serial]
     fn test_non_overlapping_template() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -92,7 +90,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_non_overlapping_template_error_cases() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

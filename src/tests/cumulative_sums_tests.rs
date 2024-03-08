@@ -4,7 +4,6 @@ mod tests {
     use crate::customtypes;
     use crate::logger;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     const BIT_STRING_1: &str = "1011010111"; // Example from NIST Paper. p-value should be 0.4116586
@@ -16,7 +15,6 @@ mod tests {
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
 
     #[test]
-    #[serial]
     fn test_cumulative_sums() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -102,7 +100,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_cumulative_sums_error_cases() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

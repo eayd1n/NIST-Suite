@@ -3,7 +3,6 @@ mod tests {
     use crate::customtypes;
     use crate::logger;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Trace";
     const TEST_NAME: customtypes::Test = customtypes::Test::FrequencyMonobit;
@@ -21,7 +20,6 @@ mod tests {
     const INVALID_FILE: &str = "/non-existing-dir/random_numbers";
 
     #[test]
-    #[serial]
     fn test_hex_bytes_to_bit_string() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -45,7 +43,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_evaluate_bit_string() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -76,7 +73,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_random_numbers_file() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

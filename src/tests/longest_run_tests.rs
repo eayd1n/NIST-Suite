@@ -3,7 +3,6 @@ mod tests {
     use crate::logger;
     use crate::longest_run;
     use crate::utils;
-    use serial_test::serial;
 
     const LOGLEVEL: &str = "Debug";
     // Example from NIST paper. p-value should be 0.180598
@@ -18,7 +17,6 @@ mod tests {
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
 
     #[test]
-    #[serial]
     fn test_longest_run() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
@@ -66,7 +64,6 @@ mod tests {
     }
 
     #[test]
-    #[serial]
     fn test_longest_run_error_cases() {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 

@@ -37,36 +37,9 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
-    // evalute the template length
-    if !(constants::TEMPLATE_LEN.0..constants::TEMPLATE_LEN.1).contains(&template_len) {
-        anyhow::bail!(
-            "{}: Passed template length '{}' must be between {} and {}",
-            TEST_NAME,
-            template_len,
-            constants::TEMPLATE_LEN.0,
-            constants::TEMPLATE_LEN.1
-        );
-    }
-
-    // recommended sizes for template lengths: 9, 10. Log a warning if they do not match
-    if template_len < constants::TEMPLATE_LEN.1 - 1 {
-        log::warn!(
-            "{}: Recommended size for template length: {}, {}",
-            TEST_NAME,
-            constants::TEMPLATE_LEN.1 - 1,
-            constants::TEMPLATE_LEN.1
-        );
-    }
-
-    // construct block size M to get the substrings to be tested
-    let block_size_m = length / number_of_blocks;
-    log::info!(
-        "{}: Template length = {}, Block size M = {}, Number of blocks N = {}",
-        TEST_NAME,
-        template_len,
-        block_size_m,
-        number_of_blocks
-    );
+    // evaluate template length and get the block size m
+    let block_size = evaluate_template_length(length, template_len, number_of_blocks)
+        .with_context(|| "Template length does not match defined requirements")?;
 
     // calculate number of templates to be searched
     let number_of_templates = 2_usize.pow(template_len.try_into().unwrap());
@@ -76,8 +49,8 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let second_fraction =
         (2.0 * (template_len as f64) - 1.0) / 2.0_f64.powf(2.0 * (template_len as f64));
 
-    let mean = ((block_size_m - template_len + 1) as f64) / (number_of_templates as f64);
-    let variance = (block_size_m as f64) * (first_fraction - second_fraction);
+    let mean = ((block_size - template_len + 1) as f64) / (number_of_templates as f64);
+    let variance = (block_size as f64) * (first_fraction - second_fraction);
     log::debug!(
         "{}: Theoretical mean = {}, Variance = {}",
         TEST_NAME,
@@ -94,14 +67,14 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
 
         // now iterate over blocks 1...N and count occurences of respective template in substring
         for block in 0..number_of_blocks {
-            let start_index = block * block_size_m;
-            let end_index = (block + 1) * block_size_m;
+            let start_index = block * block_size;
+            let end_index = (block + 1) * block_size;
             let substring = &bit_string[start_index..end_index];
 
             let mut current_counter = 0;
             let mut index = 0;
 
-            while (index + template_len) < block_size_m {
+            while (index + template_len) < block_size {
                 log::trace!(
                     "Index: {}, Index + Template length: {}",
                     index,
@@ -128,7 +101,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
         for counter in &template_counters {
             chi_square += ((*counter as f64) - mean).powf(2.0) / variance;
         }
-        log::debug!(
+        log::trace!(
             "{}: Chi_square = {} for template '{}'",
             TEST_NAME,
             chi_square,
@@ -141,7 +114,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
         } else {
             statrs::function::gamma::gamma_ur((number_of_blocks as f64) * 0.5, chi_square * 0.5)
         };
-        log::debug!(
+        log::trace!(
             "{}: p-value = {} for template '{}'",
             TEST_NAME,
             p_value,
@@ -160,4 +133,56 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
 
     Ok(p_values_mean)
+}
+
+/// Evaluate passed template length and return the resulting block size M.
+///
+/// # Arguments
+///
+/// bit_string_length - Length of bit string
+/// template_len - Length of template to be searched later in substrings
+/// number_of_blocks - The number of blocks the bitstring has to be divided into
+///
+/// # Return
+///
+/// Ok(block_size) - The resulting block size if template length is okay
+/// Err(err) - Some error occured
+fn evaluate_template_length(
+    bit_string_length: usize,
+    template_len: usize,
+    number_of_blocks: usize,
+) -> Result<usize> {
+    log::trace!("non_overlapping_template::evaluate_template_length()");
+
+    if !(constants::TEMPLATE_LEN.0..constants::TEMPLATE_LEN.1 + 1).contains(&template_len) {
+        anyhow::bail!(
+            "{}: Passed template length '{}' must be between {} and {}",
+            TEST_NAME,
+            template_len,
+            constants::TEMPLATE_LEN.0,
+            constants::TEMPLATE_LEN.1
+        );
+    }
+
+    // recommended sizes for template lengths: 9, 10. Log a warning if they do not match
+    if template_len < constants::TEMPLATE_LEN.1 - 1 {
+        log::warn!(
+            "{}: Recommended size for template length: {}, {}",
+            TEST_NAME,
+            constants::TEMPLATE_LEN.1 - 1,
+            constants::TEMPLATE_LEN.1
+        );
+    }
+
+    // construct block size M to get the substrings to be tested
+    let block_size = bit_string_length / number_of_blocks;
+    log::info!(
+        "{}: Template length = {}, Block size M = {}, Number of blocks N = {}",
+        TEST_NAME,
+        template_len,
+        block_size,
+        number_of_blocks
+    );
+
+    Ok(block_size)
 }
