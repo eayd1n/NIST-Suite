@@ -42,6 +42,11 @@ pub const MATRIX_COLUMNS_Q: usize = 32;
 
 pub static APPROXIMATIONS: [f64; 3] = [0.2888, 0.5776, 0.1336];
 
+/// Constants for the "Discrete Fourier Transform (Spectral) Test"
+pub const LOG_ARG: f64 = 1.0 / 0.05;
+pub const N_0_CONSTANT: f64 = 0.95 * 0.5;
+pub const NORMALIZED_DIFF_CONSTANT: f64 = 0.95 * 0.05 * 0.25;
+
 /// Constants for the "Non-overlapping Template Matching" test
 pub const N_BLOCKS_NON_OVERLAPPING_TEMPLATE: usize = 8;
 pub const TEMPLATE_LEN: (usize, usize) = (2, 10);

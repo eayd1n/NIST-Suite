@@ -14,7 +14,6 @@ use anyhow::{Context, Result};
 use rustfft::{num_complex::Complex, FftPlanner};
 
 const TEST_NAME: customtypes::Test = customtypes::Test::DFTSpectral;
-const LOG_ARG: f64 = 1.0 / 0.05;
 
 /// Perform the Discrete Fourier Transform (Spectral) Test by determining the p-value.
 ///
@@ -40,12 +39,12 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     let spectrum = apply_dft(bit_string, length);
 
     // calculate height threshold T = sqrt(log(1/0.05) * length)
-    let height_threshold = (LOG_ARG.log10() * (length as f64)).sqrt();
+    let height_threshold = (constants::LOG_ARG.log10() * (length as f64)).sqrt();
     log::debug!("{}: Height Threshold T = {}", TEST_NAME, height_threshold);
 
     // calculate expected theoretical (95%) number of peaks N_0 = (0.95 * length) / 2.0
     // also calculate actual observed number N_1 of peaks in M with peaks < T
-    let n_0 = 0.95 * (length as f64) * 0.5;
+    let n_0 = constants::N_0_CONSTANT * (length as f64);
 
     let mut n_1 = 0.0;
     for value in spectrum.iter().take(length / 2) {
@@ -58,7 +57,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     log::debug!("{}: N_0 = {}, N_1 = {}", TEST_NAME, n_0, n_1);
 
     // compute normalized difference d = (N_1 - N_0) / (sqrt((length * 0.95 * 0.05) / 4.0))
-    let normalized_diff = (n_1 - n_0) / ((length as f64) * 0.95 * 0.05 * 0.25).sqrt();
+    let normalized_diff =
+        (n_1 - n_0) / ((length as f64) * constants::NORMALIZED_DIFF_CONSTANT).sqrt();
     log::debug!(
         "{}: Normalized difference d = {}",
         TEST_NAME,
@@ -67,7 +67,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function: erfc(|normalized_diff| / sqrt(2))
-    let p_value = statrs::function::erf::erfc(normalized_diff.abs() / f64::sqrt(2.0));
+    let p_value = statrs::function::erf::erfc(normalized_diff.abs() / std::f64::consts::SQRT_2);
     log::info!("{}: p-value = {}", TEST_NAME, p_value);
 
     // capture the current time after the test got executed and calculate elapsed time

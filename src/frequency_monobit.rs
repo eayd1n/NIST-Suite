@@ -56,7 +56,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
 
     // finally, compute p-value to decide whether given bit string is random or not
     // Therefore we need the complementary error function: erfc(observed / sqrt(2))
-    let p_value = statrs::function::erf::erfc(observed / f64::sqrt(2.0));
+    let p_value = statrs::function::erf::erfc(observed / std::f64::consts::SQRT_2);
     log::info!("{}: p-value = {}", TEST_NAME, p_value);
 
     // capture the current time after the test got executed and calculate elapsed time
