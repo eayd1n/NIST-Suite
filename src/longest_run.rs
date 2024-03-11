@@ -211,7 +211,7 @@ fn calculate_vi_values(
     }
 
     // Iterate from the minimum threshold to the maximum threshold
-    for threshold in thresholds.0..(thresholds.1 + 1) {
+    for threshold in thresholds.0..=thresholds.1 {
         // If there were no counts for the current threshold, insert a zero count for the current
         // threshold
         vi_counts.entry(threshold).or_insert(0);
