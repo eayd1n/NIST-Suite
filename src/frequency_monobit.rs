@@ -37,21 +37,20 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         .with_context(|| "Invalid character(s) in passed bit string detected")?
         as f64;
 
-    // first of all, we need to compute the partial sum S_n. This is the difference between #ones and #zeroes
-    let count_zeros = bit_string.chars().filter(|&c| c == '0').count() as f64;
-    let count_ones = length - count_zeros;
+    // first of all, we need to compute the partial sum S_n. '1' is a +1 and '0' is a -1.
+    let mut partial_sum: i32 = 0;
 
-    log::info!(
-        "{}: Bit string contains {} zeros and {} ones",
-        TEST_NAME,
-        count_zeros,
-        count_ones
-    );
-
-    let partial_sum = (count_zeros - count_ones).abs();
+    for bit in bit_string.chars() {
+        if bit == '1' {
+            partial_sum += 1;
+        } else {
+            partial_sum -= 1;
+        }
+    }
+    log::debug!("{}: Partial Sum S_n: {}", TEST_NAME, partial_sum);
 
     // now calculate observed value S_obs = |S_n| / sqrt(length)
-    let observed = partial_sum / length.sqrt();
+    let observed = (partial_sum.abs() as f64) / length.sqrt();
     log::debug!("{}: Observed value S_obs: {}", TEST_NAME, observed);
 
     // finally, compute p-value to decide whether given bit string is random or not
