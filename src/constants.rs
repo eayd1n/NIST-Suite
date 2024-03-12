@@ -47,5 +47,10 @@ pub const LOG_ARG: f64 = 1.0 / 0.05;
 pub const N_0_CONSTANT: f64 = 0.95 * 0.5;
 pub const NORMALIZED_DIFF_CONSTANT: f64 = 0.95 * 0.05 * 0.25;
 
-/// Constants for the "Non-overlapping Template Matching" test
+/// Constants for the "Non-overlapping Template Matching" Test
 pub const TEMPLATE_LEN: (usize, usize) = (2, 10);
+
+/// Constants for the "Overlapping Template Matching" Test
+pub const RECOMMENDED_SIZE_OVERLAPPING_TEMPLATE: usize = 1000000;
+pub const MAX_N_OVERLAPPING_TEMPLATE: f64 = 5.0;
+pub static PI_VALUES_OVERLAPPING_TEMPLATE: [f64; 6] = [0.364091, 0.185659, 0.139381, 0.100571, 0.0704323, 0.139865];
