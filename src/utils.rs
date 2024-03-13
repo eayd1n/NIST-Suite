@@ -133,3 +133,47 @@ pub fn read_random_numbers(file_path: &str) -> Result<String> {
 
     Ok(bit_string)
 }
+
+/// Untar a given archive in specific destination.
+///
+/// # Arguments
+///
+/// archive_name - Archive to be decompressed
+/// dest - Destination directory to unpack the archive contents
+///
+/// # Return
+///
+/// Ok() - Successfully unpacked archive
+/// Err(err) - Some error occured
+pub fn untar_archive(archive_name: &str, dest: &str) -> Result<()> {
+    log::trace!("utils::untar_archive()");
+
+    // check whether archive and destination exist
+    if !std::path::Path::new(archive_name).exists() {
+        anyhow::bail!("Archive '{}' does not exist!", archive_name);
+    }
+    if !(std::path::Path::new(dest).exists() && std::path::Path::new(dest).is_dir()) {
+        anyhow::bail!(
+            "Destination path '{}' neither exists nor is a directory",
+            dest
+        );
+    }
+
+    // now try to untar the archive
+    let file = File::open(archive_name)
+        .with_context(|| format!("Failed to open archive '{}'", archive_name))?;
+    let decompressed = flate2::read::GzDecoder::new(file);
+
+    let mut archive = tar::Archive::new(decompressed);
+    archive
+        .unpack(dest)
+        .with_context(|| format!("Failed to unpack archive '{}'", archive_name))?;
+
+    log::debug!(
+        "Successfully unpacked archive '{}' to '{}'",
+        archive_name,
+        dest
+    );
+
+    Ok(())
+}

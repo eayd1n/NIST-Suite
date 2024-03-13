@@ -3,6 +3,7 @@ mod tests {
     use crate::customtypes;
     use crate::logger;
     use crate::utils;
+    use std::io::Read;
 
     const LOGLEVEL: &str = "Trace";
     const TEST_NAME: customtypes::Test = customtypes::Test::FrequencyMonobit;
@@ -18,6 +19,9 @@ mod tests {
     const BIT_STRING_FILE: &str = "/src/tests/testdata/random_bit_string";
     const INVALID_CHAR_IN_FILE: &str = "/src/tests/testdata/random_invalid_char";
     const INVALID_FILE: &str = "/non-existing-dir/random_numbers";
+    const TEMPLATE_FILE: &str = "/templates/template2.tar.gz";
+    const ARCHIVE_DEST_DIR: &str = "/tmp";
+    const TEMPLATE_FILE_DEST: &str = "/tmp/template2";
 
     #[test]
     fn test_hex_bytes_to_bit_string() {
@@ -121,5 +125,45 @@ mod tests {
             Err(_) => success = false,
         };
         assert!(!success);
+    }
+
+    #[test]
+    fn test_untar_archive() {
+        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
+
+        if std::path::Path::new(TEMPLATE_FILE_DEST).exists() {
+            let _ = std::fs::remove_file(TEMPLATE_FILE_DEST);
+        }
+        assert!(!std::path::Path::new(TEMPLATE_FILE_DEST).exists());
+
+        // untar archive from templates folder
+        let template = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + TEMPLATE_FILE;
+        assert!(std::path::Path::new(&template).exists());
+
+        let success: bool;
+        match utils::untar_archive(&template, ARCHIVE_DEST_DIR) {
+            Ok(_) => success = true,
+            Err(_) => success = false,
+        };
+        assert!(success);
+        assert!(std::path::Path::new(TEMPLATE_FILE_DEST).exists());
+
+        // check contents of file
+        let mut extracted_file =
+            std::fs::File::open(TEMPLATE_FILE_DEST).expect("Failed to open extracted file");
+        let mut contents = String::new();
+        extracted_file
+            .read_to_string(&mut contents)
+            .expect("Failed to read contents");
+        assert!(!contents.is_empty());
+
+        // cleanup
+        let _ = std::fs::remove_file(TEMPLATE_FILE_DEST);
+        assert!(!std::path::Path::new(TEMPLATE_FILE_DEST).exists());
     }
 }
