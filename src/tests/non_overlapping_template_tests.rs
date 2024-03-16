@@ -9,6 +9,7 @@ mod tests {
     const BIT_STRING_NIST_1: &str = "10100100101110010110";
     const BIT_STRING_ONLY_ZEROS: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     const BIT_STRING_ONLY_ONES: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+    const BIT_STRING_RANDOM_PATTERN: &str = "01011010001010110101101000101111010111100010101100101010101010101010000101010101101010101011101010";
     const BIT_STRING_SAME_PATTERN: &str = "1101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101";
     const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
     const PI_FILE: &str = "/src/tests/testdata/data.pi";
@@ -22,10 +23,12 @@ mod tests {
         logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
 
         assert!(non_overlapping_template::perform_test(BIT_STRING_NIST_1, 3, 2).unwrap() > 0.01);
-        /*   assert!(
-                    non_overlapping_template::perform_test(BIT_STRING_SAME_PATTERN, 3, 2).unwrap() <= 0.01
-                );
-        */
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_RANDOM_PATTERN, 4, 3).unwrap() > 0.01
+        );
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_SAME_PATTERN, 3, 2).unwrap() <= 0.01
+        );
         // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
         let pi_file = std::env::current_dir()
             .unwrap()

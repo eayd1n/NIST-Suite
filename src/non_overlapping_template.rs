@@ -115,20 +115,12 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
             statrs::function::gamma::gamma_ur((number_of_blocks as f64) * 0.5, chi_square * 0.5)
         };
 
-        if p_value <= 0.01 {
-            log::warn!(
-                "{}: p-value ({}) is below threshold as of 0.01",
-                TEST_NAME,
-                p_value
-            );
-        }
-
         if p_value < constants::P_VALUE_THRESHOLD {
             log::warn!(
                 "{}: p-value ({}) for template '{}' is below threshold",
                 TEST_NAME,
                 p_value,
-                template
+                &template
             );
         }
 
@@ -190,8 +182,8 @@ fn evaluate_test_params(
         log::warn!(
             "{}: Recommended size for template length: {}, {}",
             TEST_NAME,
-            constants::TEMPLATE_LEN.0,
-            constants::TEMPLATE_LEN.1
+            constants::RECOMMENDED_TEMPLATE_LEN.0,
+            constants::RECOMMENDED_TEMPLATE_LEN.1
         );
     }
 
