@@ -1,5 +1,8 @@
 //! This module contains all of the constants used in the test suite.
 
+/// Treshold for p-value to check if bit string is random or not
+pub const P_VALUE_THRESHOLD: f64 = 0.01;
+
 /// Usual recommended size for several tests
 pub const RECOMMENDED_SIZE: usize = 100;
 
@@ -48,9 +51,13 @@ pub const N_0_CONSTANT: f64 = 0.95 * 0.5;
 pub const NORMALIZED_DIFF_CONSTANT: f64 = 0.95 * 0.05 * 0.25;
 
 /// Constants for the "Non-overlapping Template Matching" Test
-pub const TEMPLATE_LEN: (usize, usize) = (2, 10);
+pub const TEMPLATE_LEN: (usize, usize) = (2, 21);
+pub const RECOMMENDED_TEMPLATE_LEN: (usize, usize) = (9, 10);
+pub const TEMPLATE_SUB_PATH: &str = "/templates/template";
+pub const TMP_DIR: &str = "/tmp";
 
 /// Constants for the "Overlapping Template Matching" Test
 pub const RECOMMENDED_SIZE_OVERLAPPING_TEMPLATE: usize = 1000000;
 pub const MAX_N_OVERLAPPING_TEMPLATE: f64 = 5.0;
-pub static PI_VALUES_OVERLAPPING_TEMPLATE: [f64; 6] = [0.364091, 0.185659, 0.139381, 0.100571, 0.0704323, 0.139865];
+pub static PI_VALUES_OVERLAPPING_TEMPLATE: [f64; 6] =
+    [0.364091, 0.185659, 0.139381, 0.100571, 0.0704323, 0.139865];

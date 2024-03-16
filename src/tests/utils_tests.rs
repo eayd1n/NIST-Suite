@@ -162,6 +162,8 @@ mod tests {
             .expect("Failed to read contents");
         assert!(!contents.is_empty());
 
+        // XXX check some error cases
+
         // cleanup
         let _ = std::fs::remove_file(TEMPLATE_FILE_DEST);
         assert!(!std::path::Path::new(TEMPLATE_FILE_DEST).exists());

@@ -12,6 +12,7 @@ use crate::constants;
 use crate::customtypes;
 use crate::utils;
 use anyhow::{Context, Result};
+use std::io::{BufRead, BufReader};
 
 const TEST_NAME: customtypes::Test = customtypes::Test::NonOverlappingTemplate;
 
@@ -37,19 +38,24 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE)
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
+    // check if we got bit string only containing zeros or ones
+    if bit_string.chars().all(|c| c == '0') || bit_string.chars().all(|c| c == '1') {
+        anyhow::bail!("Given bit string either contains only zeros or only ones");
+    }
+
     // evaluate the other input and get the block size m
     let block_size = evaluate_test_params(length, template_len, number_of_blocks)
         .with_context(|| "Template length does not match defined requirements")?;
 
-    // calculate number of templates to be searched
-    let number_of_templates = 2_usize.pow(template_len.try_into().unwrap());
+    // calculate number of templates
+    let number_of_templates = 2_usize.pow(template_len.try_into().unwrap()) as f64;
 
     // calculate theoretical mean and variance
-    let first_fraction = 1.0 / (number_of_templates as f64);
+    let first_fraction = 1.0 / number_of_templates;
     let second_fraction =
         (2.0 * (template_len as f64) - 1.0) / 2.0_f64.powf(2.0 * (template_len as f64));
 
-    let mean = ((block_size - template_len + 1) as f64) / (number_of_templates as f64);
+    let mean = ((block_size.wrapping_sub(template_len) + 1) as f64) / number_of_templates;
     let variance = (block_size as f64) * (first_fraction - second_fraction);
     log::debug!(
         "{}: Theoretical mean = {}, Variance = {}",
@@ -60,12 +66,12 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
 
     // now iterate over each template and search for it in each substring
     let mut p_values = Vec::<f64>::new();
+    let templates = get_templates(template_len).with_context(|| "Failed to get templates")?;
 
-    for num in 0..number_of_templates {
-        let template = format!("{:0width$b}", num, width = template_len);
+    for template in templates {
         let mut template_counters = Vec::<usize>::new();
 
-        // now iterate over blocks 1...N and count occurences of respective template in substring
+        // now iterate over blocks 1...N and count occurences of respective aperiodic template in substring
         for block in 0..number_of_blocks {
             let start_index = block * block_size;
             let end_index = (block + 1) * block_size;
@@ -108,6 +114,24 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
         } else {
             statrs::function::gamma::gamma_ur((number_of_blocks as f64) * 0.5, chi_square * 0.5)
         };
+
+        if p_value <= 0.01 {
+            log::warn!(
+                "{}: p-value ({}) is below threshold as of 0.01",
+                TEST_NAME,
+                p_value
+            );
+        }
+
+        if p_value < constants::P_VALUE_THRESHOLD {
+            log::warn!(
+                "{}: p-value ({}) for template '{}' is below threshold",
+                TEST_NAME,
+                p_value,
+                template
+            );
+        }
+
         log::trace!(
             "{}: p-value = {} for template '{}'",
             TEST_NAME,
@@ -149,7 +173,7 @@ fn evaluate_test_params(
     log::trace!("non_overlapping_template::evaluate_test_params()");
 
     // check whether template length is between thresholds for meaningful results
-    if !(constants::TEMPLATE_LEN.0..constants::TEMPLATE_LEN.1 + 1).contains(&template_len) {
+    if !(constants::TEMPLATE_LEN.0..=constants::TEMPLATE_LEN.1).contains(&template_len) {
         anyhow::bail!(
             "{}: Passed template length '{}' must be between {} and {}",
             TEST_NAME,
@@ -160,11 +184,13 @@ fn evaluate_test_params(
     }
 
     // recommended sizes for template lengths: 9, 10. Log a warning if they do not match
-    if template_len < constants::TEMPLATE_LEN.1 - 1 {
+    if !(constants::RECOMMENDED_TEMPLATE_LEN.0..=constants::RECOMMENDED_TEMPLATE_LEN.1)
+        .contains(&template_len)
+    {
         log::warn!(
             "{}: Recommended size for template length: {}, {}",
             TEST_NAME,
-            constants::TEMPLATE_LEN.1 - 1,
+            constants::TEMPLATE_LEN.0,
             constants::TEMPLATE_LEN.1
         );
     }
@@ -201,4 +227,57 @@ fn evaluate_test_params(
     );
 
     Ok(block_size)
+}
+
+/// Get pre-computed templates based on passed template length.
+///
+/// # Arguments
+///
+/// template_len - Length of templates to be used for the test
+///
+/// # Return
+///
+/// Ok(templates) - The extracted templates from file
+/// Err(err) - Some error occured
+fn get_templates(template_len: usize) -> Result<Vec<String>> {
+    log::trace!("non_overlapping_template::get_templates()");
+
+    // check whether template file already exists in /tmp (due to previous runs). Therefore no
+    // unpacking needed anymore
+    let template_file_path =
+        constants::TMP_DIR.to_owned() + "/template" + &template_len.to_string();
+    if !std::path::Path::new(&template_file_path).exists() {
+        // create path to templates to use
+        let template_path = match std::env::current_dir() {
+            Ok(path) => path,
+            Err(err) => anyhow::bail!("Failed to retrieve current working directory: {}", err),
+        };
+
+        let template_archive = template_path.to_string_lossy().into_owned()
+            + constants::TEMPLATE_SUB_PATH
+            + &template_len.to_string()
+            + ".tar.gz";
+
+        // now unpack the archive to tmp directory and read in the particular templates from file
+        utils::untar_archive(&template_archive, constants::TMP_DIR).with_context(|| {
+            format!("Failed to unpack template archive '{}'", &template_archive)
+        })?;
+    }
+
+    // read the file contents line by line
+    let template_file = std::fs::File::open(&template_file_path)
+        .with_context(|| format!("Failed to open template file '{}'", &template_file_path))?;
+
+    let reader = BufReader::new(template_file);
+    let mut templates = Vec::<String>::new();
+
+    for line in reader.lines() {
+        if let Ok(line) = line {
+            templates.push(line);
+        }
+    }
+
+    log::info!("Extracted {} templates to test with", templates.len());
+
+    Ok(templates)
 }

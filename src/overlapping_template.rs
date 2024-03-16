@@ -34,8 +34,12 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     let start_time = std::time::Instant::now();
 
     // check if bit string contains invalid characters
-    let length = utils::evaluate_bit_string(TEST_NAME, bit_string, constants::RECOMMENDED_SIZE_OVERLAPPING_TEMPLATE)
-        .with_context(|| "Invalid character(s) in passed bit string detected")?;
+    let length = utils::evaluate_bit_string(
+        TEST_NAME,
+        bit_string,
+        constants::RECOMMENDED_SIZE_OVERLAPPING_TEMPLATE,
+    )
+    .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // evaluate the other input and get the block size m
     let block_size = evaluate_test_params(length, template_len, number_of_blocks)

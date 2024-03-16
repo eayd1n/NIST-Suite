@@ -12,6 +12,7 @@ mod tests {
     const E_FILE: &str = "/src/tests/testdata/data.e";
     const SQRT_2_FILE: &str = "/src/tests/testdata/data.sqrt2";
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
+    const SHA_3_FILE: &str = "/src/tests/testdata/data.sha3";
 
     // XXX Fix binary matrix rank
     #[test]
@@ -82,6 +83,23 @@ mod tests {
         assert!(
             binary_matrix_rank::perform_test(
                 &sqrt_3_bit_string,
+                constants::MATRIX_ROWS_M,
+                constants::MATRIX_COLUMNS_Q
+            )
+            .unwrap()
+                >= 0.01
+        );
+
+        let sha_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SHA_3_FILE;
+        let sha_3_bit_string = utils::read_random_numbers(&sha_3_file).unwrap();
+        assert!(
+            binary_matrix_rank::perform_test(
+                &sha_3_bit_string,
                 constants::MATRIX_ROWS_M,
                 constants::MATRIX_COLUMNS_Q
             )

@@ -18,6 +18,7 @@ mod tests {
     const E_FILE: &str = "/src/tests/testdata/data.e";
     const SQRT_2_FILE: &str = "/src/tests/testdata/data.sqrt2";
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
+    const SHA_3_FILE: &str = "/src/tests/testdata/data.sha3";
 
     #[test]
     fn test_cumulative_sums() {
@@ -128,6 +129,22 @@ mod tests {
         );
         assert!(
             cumulative_sums::perform_test(&sqrt_3_bit_string, customtypes::Mode::Backward).unwrap()
+                >= 0.01
+        );
+
+        let sha_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SHA_3_FILE;
+        let sha_3_bit_string = utils::read_random_numbers(&sha_3_file).unwrap();
+        assert!(
+            cumulative_sums::perform_test(&sha_3_bit_string, customtypes::Mode::Forward).unwrap()
+                >= 0.01
+        );
+        assert!(
+            cumulative_sums::perform_test(&sha_3_bit_string, customtypes::Mode::Backward).unwrap()
                 >= 0.01
         );
     }

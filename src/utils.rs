@@ -129,7 +129,7 @@ pub fn read_random_numbers(file_path: &str) -> Result<String> {
         );
     };
 
-    log::info!("Successfully read {} random bits", bit_string.len());
+    log::info!("Successfully read {} random bits from '{}'", bit_string.len(), file_path);
 
     Ok(bit_string)
 }
