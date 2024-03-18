@@ -44,7 +44,8 @@ pub fn perform_test(bit_string: &str, block_size: usize) -> Result<f64> {
     })?;
 
     // determine the number of ones in each block. Then calculate pi_i = #ones_per_block/block_size
-    let mut pi_i = Vec::new();
+    let mut pi_i = Vec::<f64>::new();
+    pi_i.reserve_exact(number_of_blocks);
     let mut index = 0;
 
     for current_block in 0..number_of_blocks {

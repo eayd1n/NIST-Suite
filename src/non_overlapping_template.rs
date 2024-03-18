@@ -67,6 +67,7 @@ pub fn perform_test(bit_string: &str, template_len: usize, number_of_blocks: usi
     // now iterate over each template and search for it in each substring
     let mut p_values = Vec::<f64>::new();
     let templates = get_templates(template_len).with_context(|| "Failed to get templates")?;
+    p_values.reserve_exact(templates.len());
 
     for template in templates {
         let mut template_counters = Vec::<usize>::new();

@@ -138,7 +138,7 @@ pub fn read_random_numbers(file_path: &str) -> Result<String> {
     Ok(bit_string)
 }
 
-/// Untar a given archive in specific destination.
+/// Untar a given archive to specific destination.
 ///
 /// # Arguments
 ///
