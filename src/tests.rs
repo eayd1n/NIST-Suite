@@ -1,3 +1,5 @@
+mod test_helper;
+
 #[cfg(test)]
 mod utils_tests;
 
