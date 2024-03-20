@@ -16,7 +16,4 @@ rug = "1.24.0"
 rustfft = "6.2.0"
 statrs = "0.16.0"
 tar = "0.4.40"
-
-[dev-dependencies]
 rand = "0.8.5"
-sha3 = "0.10.8"

@@ -2,6 +2,7 @@
 mod tests {
     use crate::frequency_monobit;
     use crate::logger;
+    use crate::tests::test_helper;
     use crate::utils;
 
     const LOGLEVEL: &str = "Debug";
@@ -20,6 +21,9 @@ mod tests {
     const SQRT_2_FILE: &str = "/src/tests/testdata/data.sqrt2";
     const SQRT_3_FILE: &str = "/src/tests/testdata/data.sqrt3";
     const SHA_3_FILE: &str = "/src/tests/testdata/data.sha3";
+    const SAMPLES_DIR: &str = "/tmp/samples";
+    const NO_OF_SAMPLES: usize = 500;
+    const NO_OF_SAMPLE_BITS: usize = 1_000_000;
 
     #[test]
     fn test_frequency_monobit() {
@@ -88,6 +92,23 @@ mod tests {
             + SHA_3_FILE;
         let sha_3_bit_string = utils::read_random_numbers(&sha_3_file).unwrap();
         assert!(frequency_monobit::perform_test(&sha_3_bit_string).unwrap() >= 0.01);
+
+        // test 500 samples of good random numbers
+        if !(std::path::Path::new(SAMPLES_DIR).exists()
+            && std::path::Path::new(SAMPLES_DIR).is_dir())
+        {
+            log::info!("No samples exist. Creating samples first");
+            test_helper::create_good_random_numbers(NO_OF_SAMPLES, NO_OF_SAMPLE_BITS, SAMPLES_DIR)
+                .unwrap();
+        }
+
+        for file in std::fs::read_dir(SAMPLES_DIR).unwrap() {
+            let file_path = file.unwrap().path();
+            let sample_file = file_path.to_str().unwrap();
+            let bit_string = utils::read_random_numbers(sample_file).unwrap();
+
+            assert!(frequency_monobit::perform_test(&bit_string).unwrap() >= 0.01);
+        }
     }
 
     #[test]

@@ -1,11 +1,10 @@
 use anyhow::{Context, Result};
 use rand::Rng;
-use sha3::{Digest, Sha3_512};
 use std::io::{BufWriter, Write};
 
-const BITS_PER_LINE: usize = 512;
+const BITS_PER_LINE: usize = 500;
 
-/// Create samples of good random numbers by using SHA3-512.
+/// Create samples of good random numbers.
 ///
 /// # Arguments
 ///
@@ -31,8 +30,7 @@ pub fn create_good_random_numbers(
     for sample in 0..num_of_samples {
         log::trace!("Processing sample number {}", sample);
 
-        // create a SHA3-512 object and new rng for each sample
-        let mut hasher = Sha3_512::new();
+        // create new rng for each sample
         let mut rng = rand::thread_rng();
 
         // open file for writing the respective sample
@@ -44,15 +42,12 @@ pub fn create_good_random_numbers(
             .with_context(|| format!("Failed to create file '{}'", &filename))?;
         let mut writer = BufWriter::new(file);
 
-        // generate random data for this sample. Random data is used as input for SHA3-512
+        // generate random data for this sample
         let mut remaining_bits = num_of_bits;
         while remaining_bits >= BITS_PER_LINE {
-            let random_data: Vec<u8> = (0..(BITS_PER_LINE / 8)).map(|_| rng.gen()).collect();
+            let random_data: Vec<u8> = (0..(BITS_PER_LINE / 8)).map(|_| rng.gen::<u8>()).collect();
 
-            hasher.update(&random_data);
-            let hash_result = hasher.finalize_reset();
-
-            for byte in hash_result.iter() {
+            for byte in random_data {
                 writer
                     .write_all(&format!("{:08b}", byte).as_bytes())
                     .with_context(|| {
