@@ -274,3 +274,103 @@ fn get_templates(template_len: usize) -> Result<Vec<String>> {
 
     Ok(templates)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::logger;
+    use crate::non_overlapping_template;
+    use crate::utils;
+
+    const LOGLEVEL: &str = "Debug";
+    const BIT_STRING_NIST_1: &str = "10100100101110010110";
+    const BIT_STRING_ONLY_ZEROS: &str = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    const BIT_STRING_ONLY_ONES: &str = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+    const BIT_STRING_RANDOM_PATTERN: &str = "01011010001010110101101000101111010111100010101100101010101010101010000101010101101010101011101010";
+    const BIT_STRING_SAME_PATTERN: &str = "1101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101101";
+    const INVALID_BIT_STRING: &str = "010101111010101010101010101010a0101010101010100101010101";
+    const PI_FILE: &str = "/src/testdata/data.pi";
+    const E_FILE: &str = "/src/testdata/data.e";
+    const SQRT_2_FILE: &str = "/src/testdata/data.sqrt2";
+    const SQRT_3_FILE: &str = "/src/testdata/data.sqrt3";
+    const SHA_3_FILE: &str = "/src/testdata/data.sha3";
+
+    #[test]
+    fn test_non_overlapping_template() {
+        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
+
+        assert!(non_overlapping_template::perform_test(BIT_STRING_NIST_1, 3, 2).unwrap() > 0.01);
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_RANDOM_PATTERN, 4, 3).unwrap() > 0.01
+        );
+        assert!(
+            non_overlapping_template::perform_test(BIT_STRING_SAME_PATTERN, 3, 2).unwrap() <= 0.01
+        );
+        // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
+        let pi_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + PI_FILE;
+        let pi_bit_string = utils::read_random_numbers(&pi_file).unwrap();
+        assert!(non_overlapping_template::perform_test(&pi_bit_string, 10, 8).unwrap() >= 0.01);
+
+        let e_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + E_FILE;
+        let e_bit_string = utils::read_random_numbers(&e_file).unwrap();
+        assert!(non_overlapping_template::perform_test(&e_bit_string, 10, 8).unwrap() >= 0.01);
+
+        let sqrt_2_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SQRT_2_FILE;
+        let sqrt_2_bit_string = utils::read_random_numbers(&sqrt_2_file).unwrap();
+        assert!(non_overlapping_template::perform_test(&sqrt_2_bit_string, 10, 8).unwrap() >= 0.01);
+
+        let sqrt_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SQRT_3_FILE;
+        let sqrt_3_bit_string = utils::read_random_numbers(&sqrt_3_file).unwrap();
+        assert!(non_overlapping_template::perform_test(&sqrt_3_bit_string, 10, 8).unwrap() >= 0.01);
+
+        let sha_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + SHA_3_FILE;
+        let sha_3_bit_string = utils::read_random_numbers(&sha_3_file).unwrap();
+        assert!(non_overlapping_template::perform_test(&sha_3_bit_string, 10, 8).unwrap() >= 0.01);
+    }
+
+    #[test]
+    fn test_non_overlapping_template_error_cases() {
+        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
+
+        // pass empty string
+        assert!(non_overlapping_template::perform_test("", 3, 2).is_err());
+
+        // pass invalid bit string
+        assert!(non_overlapping_template::perform_test(INVALID_BIT_STRING, 6, 2).is_err());
+
+        // pass only zeros or only ones
+        assert!(non_overlapping_template::perform_test(BIT_STRING_ONLY_ZEROS, 4, 2).is_err());
+        assert!(non_overlapping_template::perform_test(BIT_STRING_ONLY_ONES, 4, 2).is_err());
+
+        // pass invalid template length sizes
+        assert!(non_overlapping_template::perform_test(BIT_STRING_NIST_1, 0, 4).is_err());
+        assert!(non_overlapping_template::perform_test(BIT_STRING_NIST_1, 22, 3).is_err());
+
+        // pass invalid number of blocks size
+        assert!(non_overlapping_template::perform_test(BIT_STRING_NIST_1, 3, 120).is_err());
+    }
+}

@@ -10,7 +10,7 @@ mod longest_run;
 mod non_overlapping_template;
 mod overlapping_template;
 mod runs;
-mod tests;
+mod test_helper;
 mod utils;
 
 use anyhow::Result;

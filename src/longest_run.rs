@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 
 const TEST_NAME: customtypes::Test = customtypes::Test::LongestRun;
 
-/// Perform the Longest Run of Ones in a Block test.
+/// Perform the "Longest Run of Ones in a Block" test.
 ///
 /// # Arguments
 ///
@@ -38,12 +38,8 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         .with_context(|| "Invalid character(s) in passed bit string detected")?;
 
     // evaluate bit string length and determine longest run configuration
-    let config = get_longest_run_config(length).with_context(|| {
-        format!(
-            "{}: Failed to retrieve longest run configuration",
-            TEST_NAME
-        )
-    })?;
+    let config = get_longest_run_config(length)
+        .with_context(|| format!("{TEST_NAME}: Failed to retrieve longest run configuration"))?;
 
     // determine the number of runs per block and calculate v_i. A "longest" run is defined as the
     // maximum number of consecutive ones in a block, e.g., "110010111" has the longest run as of 3
@@ -58,9 +54,9 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         *counts.entry(max_consecutive_ones).or_insert(0) += 1;
     }
 
-    log::debug!("{}: Number of runs before merge: {:?}", TEST_NAME, counts);
+    log::debug!("{TEST_NAME}: Number of runs before merge: {:?}", counts);
     let vi_counts = calculate_vi_values(counts, config.thresholds);
-    log::debug!("{}: Number of runs after merge: {:?}", TEST_NAME, vi_counts);
+    log::debug!("{TEST_NAME}: Number of runs after merge: {:?}", vi_counts);
 
     // Now we need to compute chi_square value
     let mut chi_square = 0.0;
@@ -68,8 +64,7 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
     // iterate over vi_values and pi_values at the same time because both have same size
     for ((_, vi_value), &pi_value) in vi_counts.iter().zip(config.pi_values.iter()) {
         log::trace!(
-            "{}: Current vi_value: {}, current pi_value: {}",
-            TEST_NAME,
+            "{TEST_NAME}: Current vi_value: {}, current pi_value: {}",
             *vi_value,
             pi_value
         );
@@ -77,43 +72,31 @@ pub fn perform_test(bit_string: &str) -> Result<f64> {
         let constant = (config.number_of_blocks as f64) * pi_value;
         chi_square += ((*vi_value as f64) - constant).powf(2.0) / constant;
     }
-    log::debug!("{}: Value of chi_square: {}", TEST_NAME, chi_square);
+    log::debug!("{TEST_NAME}: Value of chi_square: {chi_square}");
 
     // finally compute p-value with the incomplete gamma function: igamc(K/2, chi_square/2)
     let p_value = statrs::function::gamma::gamma_ur(
         ((config.pi_values.len() as f64) - 1.0) * 0.5,
         chi_square * 0.5,
     );
-    log::info!("{}: p-value = {}", TEST_NAME, p_value);
+    log::info!("{TEST_NAME}: p-value = {p_value}");
 
     // capture the current time after the test got executed and calculate elapsed time
     let end_time = std::time::Instant::now();
     let elapsed_time = end_time.duration_since(start_time).as_secs_f64();
-    log::info!("{} took {:.6} seconds", TEST_NAME, elapsed_time);
+    log::info!("{TEST_NAME} took {:.6} seconds", elapsed_time);
 
     Ok(p_value)
 }
 
-/// Evaluate bit string length and select configuration parameters based on it.
-///
-/// # Arguments
-///
-/// length - Bit string length
-///
-/// # Return
-///
-/// Ok(config) - Config parameters based on bit string size
-/// Err(err) - Some error occured
 fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig<'static>> {
     log::trace!("longest_run::get_longest_run_config()");
 
     // it is crucial to have at least 128 bit passed for the test
     if length < constants::MIN_LENGTH {
         anyhow::bail!(
-            "{}: Bit string needs at least {} bits! Actual length: {}",
-            TEST_NAME,
-            constants::MIN_LENGTH,
-            length
+            "{TEST_NAME}: Bit string needs at least {} bits! Actual length: {length}",
+            constants::MIN_LENGTH
         );
     }
 
@@ -143,20 +126,11 @@ fn get_longest_run_config(length: usize) -> Result<customtypes::LongestRunConfig
             &constants::MAX_PI_VALUES,
         );
     }
-    log::debug!("{}: Configured following values: {:?}", TEST_NAME, config);
+    log::debug!("{TEST_NAME}: Configured following values: {:?}", config);
 
     Ok(config)
 }
 
-/// Get the longest run of ones in a given block.
-///
-/// # Arguments
-///
-/// block - The block the longest run has to be computed from
-///
-/// # Return
-///
-/// max_count - Longest run number
 fn count_max_consecutive_ones(block: &str) -> i32 {
     log::trace!("longest_run::count_max_consecutive_ones()");
 
@@ -172,26 +146,10 @@ fn count_max_consecutive_ones(block: &str) -> i32 {
         }
     }
 
-    log::trace!(
-        "{}: Block '{}', longest run of ones: {}",
-        TEST_NAME,
-        block,
-        max_count
-    );
+    log::trace!("{TEST_NAME}: Block '{block}', longest run of ones: {max_count}");
     max_count
 }
 
-/// Calculcate the v_i values. Those are basically counters which longest run number occured how
-/// often.
-///
-/// # Arguments
-///
-/// run_counts - A hashmap with collected longest run counts
-/// thresholds - Minimum and maximum thresholds to merge specific counts
-///
-/// # Return
-///
-/// vi_counts - The collected v_i values
 fn calculate_vi_values(
     run_counts: BTreeMap<i32, i32>,
     thresholds: (i32, i32),
@@ -218,4 +176,92 @@ fn calculate_vi_values(
     }
 
     vi_counts
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::constants;
+    use crate::logger;
+    use crate::longest_run;
+    use crate::utils;
+
+    const LOGLEVEL: &str = "Debug";
+    const BIT_STRING_NIST_1: &str = "11001100000101010110110001001100111000000000001001001101010100010001001111010110100000001101011111001100111001101101100010110010";
+    const P_VALUE_NIST_1: f64 = 0.18060931823971144;
+    const BIT_STRING_ONLY_ZEROS: &str = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+    const BIT_STRING_ONLY_ONES: &str = "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
+    const BIT_STRING_RANDOM: &str = "10000000100000001000000010000000110000001100000011000000110000001110000011100000111000001110000011110000111100001111000011110000";
+    const BIT_STRING_NON_RANDOM: &str = "10000000010000000000010000000000001000000000001000000000001000000000000100000000000000000010000000000010000000000111111111111111";
+    const INVALID_BIT_STRING: &str = "1100110000010101011011000100110011100000000000100100110101010001000100a111010110100000001101011111001100111001101101100010110010";
+
+    #[test]
+    fn test_longest_run() {
+        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
+
+        assert_eq!(
+            longest_run::perform_test(BIT_STRING_NIST_1).unwrap(),
+            P_VALUE_NIST_1
+        );
+        assert!(longest_run::perform_test(BIT_STRING_ONLY_ZEROS).unwrap() < 0.01);
+        assert!(longest_run::perform_test(BIT_STRING_ONLY_ONES).unwrap() < 0.01);
+        assert!(longest_run::perform_test(BIT_STRING_RANDOM).unwrap() >= 0.01);
+        assert!(longest_run::perform_test(BIT_STRING_NON_RANDOM).unwrap() < 0.01);
+
+        // test pi, e, sqrt(2) and sqrt(3) in their respective binary representations
+        let pi_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + constants::PI_FILE;
+        let pi_bit_string = utils::read_random_numbers(&pi_file).unwrap();
+        assert!(longest_run::perform_test(&pi_bit_string).unwrap() >= 0.01);
+
+        let e_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + constants::E_FILE;
+        let e_bit_string = utils::read_random_numbers(&e_file).unwrap();
+        assert!(longest_run::perform_test(&e_bit_string).unwrap() >= 0.01);
+
+        let sqrt_2_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + constants::SQRT_2_FILE;
+        let sqrt_2_bit_string = utils::read_random_numbers(&sqrt_2_file).unwrap();
+        assert!(longest_run::perform_test(&sqrt_2_bit_string).unwrap() >= 0.01);
+
+        let sqrt_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + constants::SQRT_3_FILE;
+        let sqrt_3_bit_string = utils::read_random_numbers(&sqrt_3_file).unwrap();
+        assert!(longest_run::perform_test(&sqrt_3_bit_string).unwrap() >= 0.01);
+
+        let sha_3_file = std::env::current_dir()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + constants::SHA_3_FILE;
+        let sha_3_bit_string = utils::read_random_numbers(&sha_3_file).unwrap();
+        assert!(longest_run::perform_test(&sha_3_bit_string).unwrap() >= 0.01);
+    }
+
+    #[test]
+    fn test_longest_run_error_cases() {
+        logger::init_logger(LOGLEVEL).expect("Could not initialize logger");
+
+        // pass empty string
+        assert!(longest_run::perform_test("").is_err());
+
+        // pass invalid bit string
+        assert!(longest_run::perform_test(INVALID_BIT_STRING).is_err());
+    }
 }

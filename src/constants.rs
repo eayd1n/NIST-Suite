@@ -1,5 +1,12 @@
 //! This module contains all of the constants used in the test suite.
 
+/// Paths to the test files containing bit strings
+pub const PI_FILE: &str = "/src/testdata/data.pi";
+pub const E_FILE: &str = "/src/testdata/data.e";
+pub const SQRT_2_FILE: &str = "/src/testdata/data.sqrt2";
+pub const SQRT_3_FILE: &str = "/src/testdata/data.sqrt3";
+pub const SHA_3_FILE: &str = "/src/testdata/data.sha3";
+
 /// Treshold for p-value to check if bit string is random or not
 pub const P_VALUE_THRESHOLD: f64 = 0.01;
 
